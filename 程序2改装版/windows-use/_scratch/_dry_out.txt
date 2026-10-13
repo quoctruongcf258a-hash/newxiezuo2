@@ -1,0 +1,38 @@
+usage: orchestrator.py [-h] [--program {规划,写作,润色,质检}] [--chapter CHAPTER]
+                       [--phase PHASE] [--dry-run] [--loop LOOP] [--once]
+                       [--check-session] [--probe] [--recheck] [--board [程序]]
+orchestrator.py: error: argument --program: invalid choice: '\ufffd滮' (choose from '规划', '写作', '润色', '质检')
+
+========== 规划轮 ==========
+选手             兼容    结构    衔接    角色    创意    节奏    文笔    落地     总分     均分   份数
+CodeBuddy     5.8   5.0   5.0   5.8   5.2   4.2   6.0   4.0   42.2    5.1    5
+QUEST         6.6   7.1   5.6   6.8   6.9   6.9   7.0   6.3   54.8    6.7    5
+Doubao        5.7   6.3   5.8   7.3   7.9   7.2   7.8   5.8   53.8    6.7    5
+Qianwen       7.6   7.6   8.2   8.0   8.4   7.0   7.8   7.4   62.0    7.8    5
+WorkBuddy     7.8   8.5   8.8   7.8   8.2   7.5   8.0   7.5   64.6    8.0    5
+ZCode         7.0   8.0   8.2   7.2   8.0   7.4   7.6   7.2   60.6    7.6    5
+
+排名：
+  1. WorkBuddy     64.6
+  2. Qianwen       62.0
+  3. ZCode         60.6
+  4. QUEST         54.8
+  5. Doubao        53.8
+  6. CodeBuddy     42.2
+
+========== 章纲轮 ==========
+选手             兼容    结构    衔接    角色    创意    节奏    文笔    落地     总分     均分   份数
+CodeBuddy     8.4   8.3   8.4   8.7   7.8   8.2   8.5   8.9   67.5    8.4    5
+QUEST         8.8   8.3   9.2   8.8   8.1   8.1   8.3   8.4   68.2    8.5    5
+Doubao        7.1   6.4   7.3   8.0   7.2   6.9   7.7   6.9   57.6    7.2    5
+Qianwen       8.8   9.1   9.2   8.8   9.1   8.1   8.4   8.9   70.4    8.8    5
+WorkBuddy     8.9   9.1   9.0   9.2   9.1   8.5   8.5   9.1   71.4    8.9    5
+ZCode         8.6   8.2   9.3   8.8   8.1   8.0   8.2   8.6   67.8    8.5    5
+
+排名：
+  1. WorkBuddy     71.4
+  2. Qianwen       70.4
+  3. QUEST         68.2
+  4. ZCode         67.8
+  5. CodeBuddy     67.5
+  6. Doubao        57.6

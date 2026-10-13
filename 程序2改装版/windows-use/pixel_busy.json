@@ -1,0 +1,50 @@
+{
+  "_说明": "像素忙闲检测。mode=point 单点检测；mode=region 区域统计。",
+  "Doubao": {
+    "mode": "point",
+    "x": 559,
+    "y": 565,
+    "rules": [
+      {
+        "name": "运行中",
+        "busy": true,
+        "max": [
+          130,
+          130,
+          130
+        ]
+      },
+      {
+        "name": "待发送",
+        "busy": true,
+        "b_min": 220,
+        "r_max": 60,
+        "g_max": 130
+      }
+    ],
+    "default_busy": false
+  },
+  "CodeBuddy": {
+    "mode": "region",
+    "region": [
+      651,
+      976,
+      680,
+      1003
+    ],
+    "step": 2,
+    "rules": [
+      {
+        "name": "待发送",
+        "busy": true,
+        "blue_min": 50
+      },
+      {
+        "name": "运行中",
+        "busy": true,
+        "white_min": 30
+      }
+    ],
+    "default_busy": false
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "pipeline_version": "collab-fixed-5",
+  "assignments": {
+    "规划": {
+      "label": "规划",
+      "steps": {
+        "规划产出": {
+          "blocks": {
+            "定位与卖点": "GPTweb",
+            "故事核心与主题": "微软copilot",
+            "人物系统": "geminiweb",
+            "世界与设定": "GPTweb",
+            "结构与节奏": "grok",
+            "章纲清单": "微软copilot",
+            "上架包装": "grok"
+          },
+          "reviewer": "gemini",
+          "adjuster": "piweb"
+        }
+      }
+    },
+    "写作": {
+      "label": "写作",
+      "steps": {
+        "章纲": {
+          "blocks": {
+            "章纲产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "正文": {
+          "blocks": {
+            "正文产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "终审": {
+          "blocks": {},
+          "reviewer": null,
+          "adjuster": null
+        }
+      }
+    },
+    "去AI": {
+      "label": "去AI",
+      "steps": {
+        "去AI润色": {
+          "blocks": {
+            "套话与总结清理": null,
+            "句式破对称/破匀速": null,
+            "对话去同质化": null,
+            "细节与潜台词补充": null,
+            "朗读试读": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        }
+      }
+    },
+    "审核": {
+      "label": "审核",
+      "steps": {
+        "质检评审": {
+          "blocks": {
+            "逻辑设定一致": null,
+            "人物与OOC": null,
+            "节奏与爽点": null,
+            "文风/AI味/格式": null,
+            "合规": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        }
+      }
+    },
+    "出厂": {
+      "label": "出厂",
+      "steps": {
+        "出厂检查": {
+          "blocks": {
+            "低级错误": null,
+            "名称与章号统一": null,
+            "定稿打包归档": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        }
+      }
+    }
+  },
+  "run_state": {
+    "current_stage": "规划",
+    "stages": {
+      "规划": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "规划产出": "none"
+        },
+        "item_status": {
+          "规划产出": {
+            "定位与卖点": "pass",
+            "故事核心与主题": "none",
+            "人物系统": "none",
+            "世界与设定": "none",
+            "结构与节奏": "none",
+            "章纲清单": "none",
+            "上架包装": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          }
+        }
+      },
+      "写作": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "章纲": "pass",
+          "正文": "pass",
+          "终审": "pass"
+        },
+        "item_status": {
+          "章纲": {
+            "章纲产出": "pass",
+            "reviewer": "pass",
+            "adjuster": "pass"
+          },
+          "正文": {
+            "正文产出": "pass",
+            "reviewer": "pass",
+            "adjuster": "pass"
+          },
+          "终审": {
+            "reviewer": "pass"
+          }
+        }
+      },
+      "去AI": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "去AI润色": "pass"
+        },
+        "item_status": {
+          "去AI润色": {
+            "套话与总结清理": "pass",
+            "句式破对称/破匀速": "pass",
+            "对话去同质化": "pass",
+            "细节与潜台词补充": "pass",
+            "朗读试读": "pass",
+            "reviewer": "pass",
+            "adjuster": "pass"
+          }
+        }
+      },
+      "审核": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "质检评审": "pass"
+        },
+        "item_status": {
+          "质检评审": {
+            "逻辑设定一致": "pass",
+            "人物与OOC": "pass",
+            "节奏与爽点": "pass",
+            "文风/AI味/格式": "pass",
+            "合规": "pass",
+            "reviewer": "pass",
+            "adjuster": "pass"
+          }
+        }
+      },
+      "出厂": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "出厂检查": "pass"
+        },
+        "item_status": {
+          "出厂检查": {
+            "低级错误": "pass",
+            "名称与章号统一": "pass",
+            "定稿打包归档": "pass",
+            "reviewer": "pass",
+            "adjuster": "pass"
+          }
+        }
+      }
+    }
+  }
+}

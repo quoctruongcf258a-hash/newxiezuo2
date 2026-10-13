@@ -1,0 +1,125 @@
+{
+  "CodeBuddy": {
+    "input_pos": [
+      133,
+      478
+    ],
+    "window_rect": [
+      0,
+      0,
+      650,
+      570
+    ],
+    "input_rel": [
+      0.2046,
+      0.8386
+    ]
+  },
+  "QUEST": {
+    "window_title": "Quest Window",
+    "input_pos": [
+      578,
+      544
+    ],
+    "send_pos": [
+      394,
+      962
+    ],
+    "reply_pos": [
+      394,
+      962
+    ],
+    "window_rect": [
+      465,
+      2,
+      424,
+      634
+    ],
+    "input_rel": [
+      0.2665,
+      0.8549
+    ]
+  },
+  "Doubao": {
+    "input_pos": [
+      948,
+      989
+    ],
+    "window_rect": [
+      640,
+      581,
+      890,
+      483
+    ],
+    "input_rel": [
+      0.3461,
+      0.8447
+    ]
+  },
+  "Qianwen": {
+    "input_pos": [
+      319,
+      954
+    ],
+    "window_rect": [
+      -12,
+      568,
+      671,
+      508
+    ],
+    "input_rel": [
+      0.4933,
+      0.7598
+    ]
+  },
+  "WorkBuddy": {
+    "window_title": "WorkBuddy",
+    "input_pos": [
+      1657,
+      497
+    ],
+    "send_pos": [
+      1657,
+      497
+    ],
+    "reply_pos": [
+      1657,
+      497
+    ],
+    "window_rect": [
+      1530,
+      0,
+      800,
+      625
+    ],
+    "input_rel": [
+      0.1588,
+      0.7952
+    ]
+  },
+  "ZCode": {
+    "window_title": "ZCode",
+    "input_pos": [
+      278,
+      550
+    ],
+    "send_pos": [
+      278,
+      550
+    ],
+    "reply_pos": [
+      278,
+      550
+    ],
+    "window_rect": [
+      -3,
+      0,
+      480,
+      640
+    ],
+    "input_rel": [
+      0.5854,
+      0.8594
+    ]
+  }
+}

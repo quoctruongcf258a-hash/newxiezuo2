@@ -1,0 +1,401 @@
+{
+  "generated": "2026-10-11 09:17:37",
+  "project": "女王归来",
+  "files": [
+    {
+      "path": "00_初始化/1.0_总纲.md",
+      "size": 1215,
+      "mtime": "2026-10-11 09:17:07"
+    },
+    {
+      "path": "00_初始化/1.1_定位与卖点.md",
+      "size": 1260,
+      "mtime": "2026-10-11 09:17:11"
+    },
+    {
+      "path": "00_初始化/1.2_故事核心主题.md",
+      "size": 861,
+      "mtime": "2026-10-11 09:17:14"
+    },
+    {
+      "path": "00_初始化/1.3_人物系统.md",
+      "size": 1978,
+      "mtime": "2026-10-11 09:17:17"
+    },
+    {
+      "path": "00_初始化/1.4_世界观与设定.md",
+      "size": 1306,
+      "mtime": "2026-10-11 09:17:21"
+    },
+    {
+      "path": "00_初始化/1.5_结构与节奏.md",
+      "size": 1455,
+      "mtime": "2026-10-11 09:17:21"
+    },
+    {
+      "path": "00_初始化/1.6_卷纲.md",
+      "size": 2046,
+      "mtime": "2026-10-11 09:17:21"
+    },
+    {
+      "path": "00_初始化/第0步梗概.md",
+      "size": 435,
+      "mtime": "2026-10-11 09:15:37"
+    },
+    {
+      "path": "00_初始化/项目信息.json",
+      "size": 693,
+      "mtime": "2026-10-11 09:15:13"
+    },
+    {
+      "path": "_collab_章节进度.json",
+      "size": 37,
+      "mtime": "2026-10-11 09:15:36"
+    },
+    {
+      "path": "config/assignments.json",
+      "size": 16346,
+      "mtime": "2026-10-11 09:15:28"
+    },
+    {
+      "path": "config/phases.json",
+      "size": 8621,
+      "mtime": "2026-10-11 09:15:28"
+    },
+    {
+      "path": "config/prompts/00_初始化/1.0_总纲.md",
+      "size": 568,
+      "mtime": "2026-10-11 09:15:28"
+    },
+    {
+      "path": "config/prompts/00_初始化/1.1_定位与卖点.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:29"
+    },
+    {
+      "path": "config/prompts/00_初始化/1.2_故事核心主题.md",
+      "size": 580,
+      "mtime": "2026-10-11 09:15:29"
+    },
+    {
+      "path": "config/prompts/00_初始化/1.3_人物系统.md",
+      "size": 574,
+      "mtime": "2026-10-11 09:15:29"
+    },
+    {
+      "path": "config/prompts/00_初始化/1.4_世界观与设定.md",
+      "size": 580,
+      "mtime": "2026-10-11 09:15:29"
+    },
+    {
+      "path": "config/prompts/00_初始化/1.5_结构与节奏.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:29"
+    },
+    {
+      "path": "config/prompts/00_初始化/1.6_卷纲.md",
+      "size": 568,
+      "mtime": "2026-10-11 09:15:29"
+    },
+    {
+      "path": "config/prompts/00_初始化/_通用.md",
+      "size": 201,
+      "mtime": "2026-10-11 09:15:28"
+    },
+    {
+      "path": "config/prompts/00_初始化/项目信息.md",
+      "size": 570,
+      "mtime": "2026-10-11 09:15:28"
+    },
+    {
+      "path": "config/prompts/01_规划/_通用.md",
+      "size": 198,
+      "mtime": "2026-10-11 09:15:29"
+    },
+    {
+      "path": "config/prompts/01_规划/一句话故事.md",
+      "size": 585,
+      "mtime": "2026-10-11 09:15:30"
+    },
+    {
+      "path": "config/prompts/01_规划/上架简介.md",
+      "size": 768,
+      "mtime": "2026-10-11 09:15:31"
+    },
+    {
+      "path": "config/prompts/01_规划/世界规则最小集.md",
+      "size": 640,
+      "mtime": "2026-10-11 09:15:30"
+    },
+    {
+      "path": "config/prompts/01_规划/主角设计.md",
+      "size": 620,
+      "mtime": "2026-10-11 09:15:30"
+    },
+    {
+      "path": "config/prompts/01_规划/书名设计.md",
+      "size": 754,
+      "mtime": "2026-10-11 09:15:31"
+    },
+    {
+      "path": "config/prompts/01_规划/伏笔时间线关系表.md",
+      "size": 585,
+      "mtime": "2026-10-11 09:15:31"
+    },
+    {
+      "path": "config/prompts/01_规划/分卷结构.md",
+      "size": 620,
+      "mtime": "2026-10-11 09:15:31"
+    },
+    {
+      "path": "config/prompts/01_规划/前30章章纲.md",
+      "size": 638,
+      "mtime": "2026-10-11 09:15:31"
+    },
+    {
+      "path": "config/prompts/01_规划/发布与合规.md",
+      "size": 528,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/01_规划/封面设计规划.md",
+      "size": 720,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/01_规划/开篇黄金三章爆破.md",
+      "size": 610,
+      "mtime": "2026-10-11 09:15:31"
+    },
+    {
+      "path": "config/prompts/01_规划/情绪规划.md",
+      "size": 634,
+      "mtime": "2026-10-11 09:15:31"
+    },
+    {
+      "path": "config/prompts/01_规划/文档与备份.md",
+      "size": 508,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/01_规划/文风与叙事基调.md",
+      "size": 596,
+      "mtime": "2026-10-11 09:15:30"
+    },
+    {
+      "path": "config/prompts/01_规划/标签选择.md",
+      "size": 649,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/01_规划/核心冲突与反派.md",
+      "size": 588,
+      "mtime": "2026-10-11 09:15:30"
+    },
+    {
+      "path": "config/prompts/01_规划/核心配角与人物关系.md",
+      "size": 598,
+      "mtime": "2026-10-11 09:15:30"
+    },
+    {
+      "path": "config/prompts/01_规划/简介与主题.md",
+      "size": 588,
+      "mtime": "2026-10-11 09:15:30"
+    },
+    {
+      "path": "config/prompts/01_规划/类型平台读者卖点.md",
+      "size": 537,
+      "mtime": "2026-10-11 09:15:30"
+    },
+    {
+      "path": "config/prompts/01_规划/结局与终局.md",
+      "size": 610,
+      "mtime": "2026-10-11 09:15:30"
+    },
+    {
+      "path": "config/prompts/01_规划/节奏规划.md",
+      "size": 621,
+      "mtime": "2026-10-11 09:15:31"
+    },
+    {
+      "path": "config/prompts/01_规划/规划前约束.md",
+      "size": 533,
+      "mtime": "2026-10-11 09:15:29"
+    },
+    {
+      "path": "config/prompts/01_规划/规划验收.md",
+      "size": 665,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/02_写作/W1_章前对齐卡.md",
+      "size": 573,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/02_写作/W2_分布.md",
+      "size": 564,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/02_写作/W2_分布__动.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:33"
+    },
+    {
+      "path": "config/prompts/02_写作/W2_分布__始.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/02_写作/W2_分布__成.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:33"
+    },
+    {
+      "path": "config/prompts/02_写作/W2_分布__显.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/02_写作/W2_分布__终.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:33"
+    },
+    {
+      "path": "config/prompts/02_写作/W2_分布__通.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:33"
+    },
+    {
+      "path": "config/prompts/02_写作/W3_正文.md",
+      "size": 564,
+      "mtime": "2026-10-11 09:15:33"
+    },
+    {
+      "path": "config/prompts/02_写作/W3_正文__动.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:33"
+    },
+    {
+      "path": "config/prompts/02_写作/W3_正文__始.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:33"
+    },
+    {
+      "path": "config/prompts/02_写作/W3_正文__成.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:34"
+    },
+    {
+      "path": "config/prompts/02_写作/W3_正文__显.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:33"
+    },
+    {
+      "path": "config/prompts/02_写作/W3_正文__终.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:34"
+    },
+    {
+      "path": "config/prompts/02_写作/W3_正文__通.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:33"
+    },
+    {
+      "path": "config/prompts/02_写作/W4_章内节奏自检.md",
+      "size": 576,
+      "mtime": "2026-10-11 09:15:34"
+    },
+    {
+      "path": "config/prompts/02_写作/_通用.md",
+      "size": 198,
+      "mtime": "2026-10-11 09:15:32"
+    },
+    {
+      "path": "config/prompts/03_去AI/R1_润色.md",
+      "size": 563,
+      "mtime": "2026-10-11 09:15:34"
+    },
+    {
+      "path": "config/prompts/03_去AI/_通用.md",
+      "size": 197,
+      "mtime": "2026-10-11 09:15:34"
+    },
+    {
+      "path": "config/prompts/04_审核/Q1_逻辑设定一致.md",
+      "size": 576,
+      "mtime": "2026-10-11 09:15:34"
+    },
+    {
+      "path": "config/prompts/04_审核/Q2_平台合规.md",
+      "size": 570,
+      "mtime": "2026-10-11 09:15:34"
+    },
+    {
+      "path": "config/prompts/04_审核/Q3_爽点节奏.md",
+      "size": 570,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/04_审核/Q4_文风格式回查.md",
+      "size": 576,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/04_审核/Q5_质检汇总.md",
+      "size": 570,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/04_审核/Q6_成书检验.md",
+      "size": 509,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/04_审核/Q7_上架前低级错误检查.md",
+      "size": 585,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/04_审核/Q8_入库.md",
+      "size": 511,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/04_审核/Q9_推演下一章.md",
+      "size": 573,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/04_审核/_通用.md",
+      "size": 198,
+      "mtime": "2026-10-11 09:15:34"
+    },
+    {
+      "path": "config/prompts/05_出厂/5-1_低级错误.md",
+      "size": 571,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/05_出厂/5-2_名称与章号统一.md",
+      "size": 580,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/05_出厂/5-3_定稿打包归档.md",
+      "size": 577,
+      "mtime": "2026-10-11 09:15:36"
+    },
+    {
+      "path": "config/prompts/05_出厂/_通用.md",
+      "size": 198,
+      "mtime": "2026-10-11 09:15:35"
+    },
+    {
+      "path": "config/prompts/_通用.md",
+      "size": 193,
+      "mtime": "2026-10-11 09:15:28"
+    }
+  ]
+}

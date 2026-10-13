@@ -1,0 +1,27 @@
+﻿{
+  "reviewer": "test_reviewer",
+  "target": "ch012_block03",
+  "blind": true,
+  "key_block": false,
+  "checks": [],
+  "main_scores": {
+    "ai_rewrite": 8.2,
+    "plot": 8.6,
+    "character": 7.8,
+    "coherence": 8.1,
+    "style": 8.4
+  },
+  "sub_scores": {
+    "rhythm": 7.9,
+    "info": 8.3,
+    "scene": 8.5,
+    "theme": 8.0,
+    "reader": 8.7,
+    "sustainability": 9.1
+  },
+  "hard_fail": false,
+  "hard_fail_reasons": [],
+  "confidence": 0.82,
+  "top_good": ["伏笔回收完整"],
+  "top_bad": ["人物动机偏弱"]
+}

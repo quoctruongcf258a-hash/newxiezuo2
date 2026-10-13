@@ -1,0 +1,12 @@
+--- buddycn.cmd 内容 ---
+@echo off
+setlocal
+set VSCODE_DEV=
+set ELECTRON_RUN_AS_NODE=1
+"%~dp0..\CodeBuddy CN.exe" "%~dp0..\resources\app\out\cli.js" %*
+IF %ERRORLEVEL% NEQ 0 EXIT /b %ERRORLEVEL%
+endlocal
+
+--- 直接跑 exe 带 --version（探测参数解析）---
+  --version => 
+  --help 前3行 => 

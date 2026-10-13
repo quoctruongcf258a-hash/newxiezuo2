@@ -1,0 +1,764 @@
+{
+  "pipeline_version": "collab-fixed-5",
+  "assignments": {
+    "规划": {
+      "label": "规划",
+      "steps": {
+        "规划前约束": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "类型平台读者卖点": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "文风与叙事基调": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "一句话故事": {
+          "blocks": {
+            "产出": [
+              "WorkBuddy",
+              "Doubao"
+            ]
+          },
+          "reviewer": [
+            "gemini"
+          ],
+          "adjuster": "Doubao"
+        },
+        "简介与主题": {
+          "blocks": {
+            "产出": [
+              "WorkBuddy"
+            ]
+          },
+          "reviewer": [
+            "CodeBuddy"
+          ],
+          "adjuster": "gemini"
+        },
+        "人物设计": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "核心冲突与反派": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "世界规则最小集": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "门派与势力": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "副本与任务线": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "血脉与灵兽": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "地图与秘境": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "宝物与传承": {
+          "blocks": {
+            "产出": [
+              "Doubao",
+              "QUEST",
+              "gemini"
+            ]
+          },
+          "reviewer": [
+            "WorkBuddy",
+            "Doubao",
+            "QUEST"
+          ],
+          "adjuster": "Doubao"
+        },
+        "天骄与对手": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "全书结构": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "分卷结构": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "情绪规划": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "节奏规划": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "结局与终局": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "总纲规划": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "粗纲规划": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "简短细纲规划": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "细纲": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "前30章落地章纲": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "开篇黄金三章爆破": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "伏笔时间线关系表": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": "gemini"
+        },
+        "书名设计": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "上架简介": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": "Doubao"
+        },
+        "标签选择": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "封面设计规划": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "文档与备份": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "发布与合规": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "规划验收": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        }
+      }
+    },
+    "写作": {
+      "label": "写作",
+      "steps": {
+        "W0_细纲分析": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "W1_章前对齐卡": {
+          "blocks": {
+            "产出": [
+              "Doubao"
+            ]
+          },
+          "reviewer": [
+            "gemini"
+          ],
+          "adjuster": "WorkBuddy"
+        },
+        "W2_分布": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "W3_正文": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "W4_章内节奏自检": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        }
+      }
+    },
+    "去AI": {
+      "label": "去AI",
+      "steps": {
+        "R1_润色": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        }
+      }
+    },
+    "审核": {
+      "label": "审核",
+      "steps": {
+        "Q1_逻辑设定一致": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "Q2_平台合规": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "Q3_爽点节奏": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "Q4_文风格式回查": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "Q5_质检汇总": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "Q6_成书检验": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "Q7_上架前低级错误检查": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "Q8_入库": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "Q9_推演下一章": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        }
+      }
+    },
+    "出厂": {
+      "label": "出厂",
+      "steps": {
+        "5-1_低级错误": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "5-2_名称与章号统一": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        },
+        "5-3_定稿打包归档": {
+          "blocks": {
+            "产出": null
+          },
+          "reviewer": null,
+          "adjuster": null
+        }
+      }
+    }
+  },
+  "run_state": {
+    "current_stage": "规划",
+    "stages": {
+      "规划": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "规划前约束": "none",
+          "类型平台读者卖点": "none",
+          "文风与叙事基调": "none",
+          "一句话故事": "none",
+          "简介与主题": "none",
+          "人物设计": "none",
+          "核心冲突与反派": "none",
+          "世界规则最小集": "none",
+          "门派与势力": "none",
+          "副本与任务线": "none",
+          "血脉与灵兽": "none",
+          "地图与秘境": "none",
+          "宝物与传承": "none",
+          "天骄与对手": "none",
+          "全书结构": "none",
+          "分卷结构": "none",
+          "情绪规划": "none",
+          "节奏规划": "none",
+          "结局与终局": "none",
+          "总纲规划": "none",
+          "粗纲规划": "none",
+          "简短细纲规划": "none",
+          "细纲": "none",
+          "前30章落地章纲": "none",
+          "开篇黄金三章爆破": "none",
+          "伏笔时间线关系表": "none",
+          "书名设计": "none",
+          "上架简介": "none",
+          "标签选择": "none",
+          "封面设计规划": "none",
+          "文档与备份": "none",
+          "发布与合规": "none",
+          "规划验收": "none"
+        },
+        "item_status": {
+          "规划前约束": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "类型平台读者卖点": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "文风与叙事基调": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "一句话故事": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "简介与主题": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "人物设计": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "核心冲突与反派": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "世界规则最小集": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "门派与势力": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "副本与任务线": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "血脉与灵兽": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "地图与秘境": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "宝物与传承": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "天骄与对手": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "全书结构": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "分卷结构": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "情绪规划": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "节奏规划": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "结局与终局": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "总纲规划": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "粗纲规划": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "简短细纲规划": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "细纲": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "前30章落地章纲": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "开篇黄金三章爆破": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "伏笔时间线关系表": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "书名设计": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "上架简介": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "标签选择": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "封面设计规划": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "文档与备份": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "发布与合规": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "规划验收": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          }
+        }
+      },
+      "写作": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "W0_细纲分析": "none",
+          "W1_章前对齐卡": "none",
+          "W2_分布": "none",
+          "W3_正文": "none",
+          "W4_章内节奏自检": "none"
+        },
+        "item_status": {
+          "W0_细纲分析": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "W1_章前对齐卡": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "W2_分布": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "W3_正文": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "W4_章内节奏自检": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          }
+        }
+      },
+      "去AI": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "R1_润色": "none"
+        },
+        "item_status": {
+          "R1_润色": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          }
+        }
+      },
+      "审核": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "Q1_逻辑设定一致": "none",
+          "Q2_平台合规": "none",
+          "Q3_爽点节奏": "none",
+          "Q4_文风格式回查": "none",
+          "Q5_质检汇总": "none",
+          "Q6_成书检验": "none",
+          "Q7_上架前低级错误检查": "none",
+          "Q8_入库": "none",
+          "Q9_推演下一章": "none"
+        },
+        "item_status": {
+          "Q1_逻辑设定一致": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "Q2_平台合规": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "Q3_爽点节奏": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "Q4_文风格式回查": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "Q5_质检汇总": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "Q6_成书检验": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "Q7_上架前低级错误检查": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "Q8_入库": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "Q9_推演下一章": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          }
+        }
+      },
+      "出厂": {
+        "status": "pending",
+        "current_step": null,
+        "manual_gate": true,
+        "step_status": {
+          "5-1_低级错误": "none",
+          "5-2_名称与章号统一": "none",
+          "5-3_定稿打包归档": "none"
+        },
+        "item_status": {
+          "5-1_低级错误": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "5-2_名称与章号统一": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          },
+          "5-3_定稿打包归档": {
+            "产出": "none",
+            "reviewer": "none",
+            "adjuster": "none"
+          }
+        }
+      }
+    }
+  }
+}

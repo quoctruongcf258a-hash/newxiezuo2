@@ -1,0 +1,200 @@
+[
+  {
+    "名字": "WorkBuddy",
+    "类型": "electron",
+    "exe": "F:\\Program\\WorkBuddy.exe",
+    "cdp_port": 9227,
+    "进程名": "WorkBuddy",
+    "启用": false
+  },
+  {
+    "名字": "Doubao",
+    "类型": "electron",
+    "exe": "F:\\Program Files\\com.tencent.pcgame.doubao\\Doubao\\app\\Doubao.exe",
+    "cdp_port": 9231,
+    "进程名": "Doubao",
+    "启用": false
+  },
+  {
+    "名字": "QUEST",
+    "类型": "electron",
+    "进程名": "QoderCN",
+    "启用": true,
+    "exe": "C:\\Users\\Administrator\\AppData\\Local\\Programs\\QoderCN\\QoderCN.exe",
+    "cdp_port": 9224
+  },
+  {
+    "名字": "CodeBuddy",
+    "类型": "electron",
+    "exe": "C:\\Users\\Administrator\\AppData\\Local\\Programs\\CodeBuddy CN\\CodeBuddy CN.exe",
+    "cdp_port": 9223,
+    "进程名": "CodeBuddy CN",
+    "启用": false
+  },
+  {
+    "名字": "TraeWork",
+    "类型": "electron",
+    "exe": "G:\\TRAE SOLO CN\\TRAE SOLO CN.exe",
+    "cdp_port": 9225,
+    "进程名": "TRAE SOLO CN",
+    "启用": false
+  },
+  {
+    "名字": "Qianwen",
+    "类型": "electron",
+    "exe": "C:\\Program Files\\QianwenApp\\qianwen.exe",
+    "cdp_port": 9226,
+    "进程名": "qianwen",
+    "启用": false
+  },
+  {
+    "名字": "ZCode",
+    "类型": "electron",
+    "exe": "C:\\Program Files\\ZCode\\ZCode.exe",
+    "cdp_port": 9228,
+    "进程名": "ZCode",
+    "启用": false
+  },
+  {
+    "名字": "kimi",
+    "类型": "web",
+    "进程名": "msedge",
+    "启用": true,
+    "url": "https://www.kimi.com/?data_source=tracer&utm_campaign=TR_dDjbmDhF&utm_content=&utm_medium=%E5%BF%85%E5%BA%94&utm_source=bing&utm_term=%E5%B8%B8%E7%94%A8%E7%9A%84ai%E5%B7%A5%E5%85%B7&tr_param1=kimi&msclkid=802cdfb7f3d4139c074bb574259bb106",
+    "浏览器": "msedge",
+    "cdp_port": 9229
+  },
+  {
+    "名字": "千问",
+    "类型": "web",
+    "进程名": "msedge",
+    "启用": true,
+    "url": "https://www.qianwen.com/?ch=webtongyi@sem_ymbingsemwebty1_brand1_45&planid=487784882&unitid=1228155952690691&a_keywordid=76760344242749&a_creative=76759891845594&a_matchtype=e&a_keyword=%E9%80%9A%E4%B9%89%E5%8D%83%E9%97%AE%E3%80%81&query=%E9%80%9A%E4%B9%89%E5%8D%83%E9%97%AE&from=bingsem&aid=188128415&tag=ppt&msclkid=7591edab8c00135af8d98768561e807e&bizPassParams=ch%3Dwebtongyi%40sem_ymbingsemwebty1_brand1_45%26planid%3D487784882%26unitid%3D1228155952690691%26a_keywordid%3D76760344242749%26a_creative%3D76759891845594%26a_matchtype%3De%26a_keyword%3D%25E9%2580%259A%25E4%25B9%2589%25E5%258D%2583%25E9%2597%25AE%25E3%2580%2581%26query%3D%25E9%2580%259A%25E4%25B9%2589%25E5%258D%2583%25E9%2597%25AE%26from%3Dbingsem%26aid%3D188128415%26tag%3Dppt%26msclkid%3D7591edab8c00135af8d98768561e807e%26x-platform%3DexternalH5%26tq%3DSD",
+    "浏览器": "msedge",
+    "cdp_port": 9230
+  },
+  {
+    "名字": "小张同学",
+    "类型": "web",
+    "进程名": "msedge",
+    "启用": true,
+    "url": "https://chat.deepseek.com/",
+    "浏览器": "msedge",
+    "cdp_port": 9234
+  },
+  {
+    "名字": "文心",
+    "类型": "web",
+    "进程名": "msedge",
+    "启用": true,
+    "url": "https://wenxin.baidu.com/?enter_type=yiyan_site",
+    "浏览器": "msedge",
+    "cdp_port": 9232
+  },
+  {
+    "名字": "智普WEB",
+    "类型": "web",
+    "进程名": "msedge",
+    "启用": true,
+    "url": "https://chatglm.cn/main/alltoolsdetail?redirect=/video&lang=zh&cid=6ac84a5567007cf1fe41bafc",
+    "浏览器": "msedge",
+    "cdp_port": 9233
+  },
+  {
+    "名字": "元宝WEB",
+    "类型": "web",
+    "进程名": "msedge",
+    "启用": true,
+    "url": "https://yuanbao.tencent.com/chat/naQivTmsDa",
+    "浏览器": "msedge",
+    "cdp_port": 9235
+  },
+  {
+    "名字": "360WEB",
+    "类型": "web",
+    "进程名": "msedge",
+    "启用": true,
+    "url": "https://chat.360.com/chat/494a6f99ee81e03d",
+    "浏览器": "msedge",
+    "cdp_port": 9236
+  },
+  {
+    "名字": "天工AI",
+    "类型": "web",
+    "进程名": "msedge",
+    "启用": true,
+    "url": "https://www.tiangong.cn/",
+    "浏览器": "msedge",
+    "cdp_port": 9237
+  },
+  {
+    "名字": "ima",
+    "类型": "electron",
+    "进程名": "ima.copilot",
+    "启用": true,
+    "exe": "C:/Users/Administrator/AppData/Local/ima.copilot/Application/ima.copilot.exe",
+    "cdp_port": 9238
+  },
+  {
+    "名字": "微软copilot",
+    "类型": "web",
+    "进程名": "chrome",
+    "启用": true,
+    "url": "https://copilot.com/chat/conversation/86efcb58-31ef-43e8-b095-0be206544696?fromcode=cmmlf487uwy&es=Click&redirfrom=cosmicRingCookie",
+    "浏览器": "chrome",
+    "cdp_port": 9222
+  },
+  {
+    "名字": "gemini",
+    "类型": "electron",
+    "进程名": "Antigravity",
+    "启用": true,
+    "exe": "C:/Users/Administrator/AppData/Local/Programs/antigravity/Antigravity.exe",
+    "cdp_port": 9239
+  },
+  {
+    "名字": "GPTweb",
+    "类型": "web",
+    "进程名": "chrome",
+    "启用": true,
+    "url": "https://chatgpt.com/?utm_source=google&utm_medium=paid_search&gbraid=0AAAAA-I0E5dCR2iuuNKgUIRMtgBTYFafL&gclid=CjwKCAjw_pzWBhAkEiwAwDCi1XOl4VAUm8vnfRVVvd_rw9Vznry26W5Vv0nelGVVmZ9WrMSrpUlV6xoC5M8QAvD_BwE&c_id=21990698763&c_crid=783838605049&c_agid=177552713902&c_kwid=kwd-1927227100722",
+    "浏览器": "chrome",
+    "cdp_port": 9240
+  },
+  {
+    "名字": "geminiweb",
+    "类型": "web",
+    "进程名": "chrome",
+    "启用": true,
+    "url": "https://gemini.google.com/app",
+    "浏览器": "chrome",
+    "cdp_port": 9241
+  },
+  {
+    "名字": "grok",
+    "类型": "web",
+    "进程名": "chrome",
+    "启用": true,
+    "url": "https://grok.com/",
+    "浏览器": "chrome",
+    "cdp_port": 9242
+  },
+  {
+    "名字": "poe",
+    "类型": "web",
+    "进程名": "chrome",
+    "启用": true,
+    "url": "https://poe.com/",
+    "浏览器": "chrome",
+    "cdp_port": 9243
+  },
+  {
+    "名字": "piweb",
+    "类型": "web",
+    "进程名": "chrome",
+    "启用": true,
+    "url": "https://pi.ai/talk/uYSxPsXXLyXqMSeAXa727",
+    "浏览器": "chrome",
+    "cdp_port": 9244
+  }
+]

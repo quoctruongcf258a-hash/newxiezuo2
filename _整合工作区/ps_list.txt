@@ -1,0 +1,12 @@
+--- CIM ---
+PID=17244  CMD=C:\Users\Administrator\AppData\Local\Programs\Python\Python314\python.exe C:\Users\Administrator\.codebuddy\mcp-servers\computer-use\server.py
+PID=34564  CMD="C:\Users\Administrator\AppData\Local\Programs\Python\Python314\python.exe" -c "import sys; sys.path.insert(0,'compete'); sys.path.insert(0,'core'); import launcher_compete; launcher_compete.main()"
+PID=28340  CMD=C:\Users\Administrator\AppData\Local\Programs\Python\Python314\python.exe C:\Users\Administrator\.codebuddy\mcp-servers\computer-use\server.py
+PID=37604  CMD=C:\Users\Administrator\AppData\Local\Programs\Python\Python314\python.exe C:\Users\Administrator\.codebuddy\mcp-servers\computer-use\server.py
+PID=18972  CMD=C:\Users\Administrator\AppData\Local\Programs\Python\Python314\python.exe C:\Users\Administrator\.codebuddy\mcp-servers\computer-use\server.py
+--- titles ---
+PID=17244 TITLE=''
+PID=18972 TITLE=''
+PID=28340 TITLE=''
+PID=34564 TITLE=''
+PID=37604 TITLE=''

@@ -1,0 +1,59 @@
+{
+  "_说明": "真实测试阵容：DeepSeek, Kimi, 通义千问 3家同块赛马产出与互审，豆包作为主管负责拼接与终审。",
+  "opened": [
+    {
+      "key": "deepseek",
+      "label": "DeepSeek",
+      "vendor": "深度求索",
+      "region": "国内",
+      "form": "file",
+      "target": "C:/Users/Administrator/Desktop/AI输出/02_各AI独立产出/DeepSeek",
+      "browser": null,
+      "bestFor": [
+        "推理",
+        "逻辑与因果审核"
+      ]
+    },
+    {
+      "key": "kimi",
+      "label": "Kimi",
+      "vendor": "月之暗面",
+      "region": "国内",
+      "form": "file",
+      "target": "C:/Users/Administrator/Desktop/AI输出/02_各AI独立产出/Kimi",
+      "browser": null,
+      "bestFor": [
+        "长上下文",
+        "超长整理"
+      ]
+    },
+    {
+      "key": "tongyi",
+      "label": "通义千问",
+      "vendor": "阿里巴巴",
+      "region": "国内",
+      "form": "file",
+      "target": "C:/Users/Administrator/Desktop/AI输出/02_各AI独立产出/Tongyi",
+      "browser": null,
+      "bestFor": [
+        "中文网文腔",
+        "设定"
+      ]
+    },
+    {
+      "key": "doubao",
+      "label": "豆包",
+      "vendor": "字节跳动",
+      "region": "国内",
+      "form": "file",
+      "target": "C:/Users/Administrator/Desktop/AI输出/02_各AI独立产出/Doubao",
+      "browser": null,
+      "bestFor": [
+        "主管终审",
+        "拼接择优"
+      ]
+    }
+  ],
+  "merge_app": "doubao",
+  "date": "2026-10-02"
+}

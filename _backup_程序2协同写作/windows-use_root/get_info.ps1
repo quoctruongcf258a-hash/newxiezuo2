@@ -1,0 +1,11 @@
+
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Write-Host '=====系统信息====='
+Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber | Format-List
+Write-Host '=====CPU====='
+Get-CimInstance Win32_Processor | Select-Object Name, MaxClockSpeed | Format-List
+Write-Host '=====内存====='
+ = (Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB
+Write-Host ('总内存: {0:N2} GB' -f )
+Write-Host '=====显卡====='
+Get-CimInstance Win32_VideoController | Select-Object Name | Format-List

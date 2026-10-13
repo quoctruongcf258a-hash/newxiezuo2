@@ -1,0 +1,1 @@
+C:\Users\Administrator\AppData\Local\Programs\CodeBuddy CN\CodeBuddy CN.exe: bad option: --remote-debugging-port=9223

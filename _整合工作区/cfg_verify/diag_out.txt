@@ -1,0 +1,723 @@
+📚 全书编排：规划1轮 + 正文循环 2 章（写作4+润色1+审核9 / 章）+ 出厂1轮
+▶▶ 01_规划
+=== 环节【01_规划】开始（23 子环/段组）===
+-- 子环 规划前约束（共享输入：无）--
+  · task.md 已生成（规划前约束）
+  ◆ mode=human（AI 候选 + 人拍板）
+  ✔ candidate.md（豆包）
+  ⏸ human 环：已出候选，等待人拍板（pending.json）
+  ⊘ 子环 规划前约束 跳过（未配置/无产出）
+-- 子环 类型平台读者卖点（共享输入：无）--
+  · task.md 已生成（类型平台读者卖点）
+  ◆ mode=human（AI 候选 + 人拍板）
+  ✔ candidate.md（豆包）
+  ⏸ human 环：已出候选，等待人拍板（pending.json）
+  ⊘ 子环 类型平台读者卖点 跳过（未配置/无产出）
+-- 子环 文风与叙事基调（共享输入：无）--
+  · task.md 已生成（文风与叙事基调）
+  ◆ mode=human（AI 候选 + 人拍板）
+  ✔ candidate.md（豆包）
+  ⏸ human 环：已出候选，等待人拍板（pending.json）
+  ⊘ 子环 文风与叙事基调 跳过（未配置/无产出）
+-- 子环 一句话故事（共享输入：无）--
+  · task.md 已生成（一句话故事）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 简介与主题（共享输入：无）--
+  · task.md 已生成（简介与主题）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 主角设计（共享输入：无）--
+  · task.md 已生成（主角设计）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 核心冲突与反派（共享输入：无）--
+  · task.md 已生成（核心冲突与反派）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 核心配角与人物关系（共享输入：无）--
+  · task.md 已生成（核心配角与人物关系）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 世界规则最小集（共享输入：无）--
+  · task.md 已生成（世界规则最小集）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 结局与终局（共享输入：无）--
+  · task.md 已生成（结局与终局）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 分卷结构（共享输入：无）--
+  · task.md 已生成（分卷结构）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 情绪规划（共享输入：无）--
+  · task.md 已生成（情绪规划）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 节奏规划（共享输入：无）--
+  · task.md 已生成（节奏规划）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 前30章章纲（共享输入：无）--
+  · task.md 已生成（前30章章纲）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 开篇黄金三章爆破（共享输入：无）--
+  · task.md 已生成（开篇黄金三章爆破）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 伏笔时间线关系表（共享输入：无）--
+  · task.md 已生成（伏笔时间线关系表）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 书名设计（共享输入：无）--
+  · task.md 已生成（书名设计）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 上架简介（共享输入：无）--
+  · task.md 已生成（上架简介）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 标签选择（共享输入：无）--
+  · task.md 已生成（标签选择）
+  ◆ mode=human（AI 候选 + 人拍板）
+  ✔ candidate.md（豆包）
+  ⏸ human 环：已出候选，等待人拍板（pending.json）
+  ⊘ 子环 标签选择 跳过（未配置/无产出）
+-- 子环 封面设计规划（共享输入：无）--
+  · task.md 已生成（封面设计规划）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 文档与备份（共享输入：无）--
+  · task.md 已生成（文档与备份）
+  ◆ mode=human（AI 候选 + 人拍板）
+  ✔ candidate.md（豆包）
+  ⏸ human 环：已出候选，等待人拍板（pending.json）
+  ⊘ 子环 文档与备份 跳过（未配置/无产出）
+-- 子环 发布与合规（共享输入：无）--
+  · task.md 已生成（发布与合规）
+  ◆ mode=human（AI 候选 + 人拍板）
+  ✔ candidate.md（豆包）
+  ⏸ human 环：已出候选，等待人拍板（pending.json）
+  ⊘ 子环 发布与合规 跳过（未配置/无产出）
+-- 子环 规划验收（共享输入：无）--
+  · task.md 已生成（规划验收）
+  ◆ mode=lock（AI 审计 + 人锁）
+  ✔ audit.md（审计者 智谱清言）
+  ⏸ lock 环：审计已完成，等待人锁定（locked.json）
+  ⊘ 子环 规划验收 跳过（未配置/无产出）
+=== 环节【01_规划】完成，已写 放行.json（confirmed=false），等待 UI 放行 ===
+▶▶ 02_写作 / 第001章
+=== 环节【02_写作】开始（4 子环/段组）===
+-- 子环 W1_章前对齐卡（共享输入：无）--
+  · task.md 已生成（W1_章前对齐卡）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 复合子环 W2_分布（6 段：始→显→通→动→成→终）--
+  · 段 始（W2_分布/始）
+  · task.md 已生成（W2_分布/始）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 显（W2_分布/显）
+  · task.md 已生成（W2_分布/显）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 通（W2_分布/通）
+  · task.md 已生成（W2_分布/通）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 动（W2_分布/动）
+  · task.md 已生成（W2_分布/动）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 成（W2_分布/成）
+  · task.md 已生成（W2_分布/成）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 终（W2_分布/终）
+  · task.md 已生成（W2_分布/终）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  ✔ 已拼接 第001章_正文.md（6 段）
+-- 复合子环 W3_正文（6 段：始→显→通→动→成→终）--
+  · 段 始（W3_正文/始）
+  · task.md 已生成（W3_正文/始）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 显（W3_正文/显）
+  · task.md 已生成（W3_正文/显）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 通（W3_正文/通）
+  · task.md 已生成（W3_正文/通）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 动（W3_正文/动）
+  · task.md 已生成（W3_正文/动）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 成（W3_正文/成）
+  · task.md 已生成（W3_正文/成）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 终（W3_正文/终）
+  · task.md 已生成（W3_正文/终）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  ✔ 已拼接 第001章_正文.md（6 段）
+-- 子环 W4_章内节奏自检（共享输入：无）--
+  · task.md 已生成（W4_章内节奏自检）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+=== 环节【02_写作】完成，已写 放行.json（confirmed=false），等待 UI 放行 ===
+▶▶ 03_去AI / 第001章
+=== 环节【03_去AI】开始（1 子环/段组）===
+-- 子环 R1_润色（共享输入：无）--
+  · task.md 已生成（R1_润色）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+=== 环节【03_去AI】完成，已写 放行.json（confirmed=false），等待 UI 放行 ===
+▶▶ 04_审核 / 第001章
+=== 环节【04_审核】开始（9 子环/段组）===
+-- 子环 Q1_逻辑设定一致（共享输入：无）--
+  · task.md 已生成（Q1_逻辑设定一致）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q2_平台合规（共享输入：无）--
+  · task.md 已生成（Q2_平台合规）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q3_爽点节奏（共享输入：无）--
+  · task.md 已生成（Q3_爽点节奏）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q4_文风格式回查（共享输入：无）--
+  · task.md 已生成（Q4_文风格式回查）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q5_质检汇总（共享输入：无）--
+  · task.md 已生成（Q5_质检汇总）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q6_成书检验（共享输入：无）--
+  · task.md 已生成（Q6_成书检验）
+  ◆ mode=lock（AI 审计 + 人锁）
+  ✔ audit.md（审计者 智谱清言）
+  ⏸ lock 环：审计已完成，等待人锁定（locked.json）
+  ⊘ 子环 Q6_成书检验 跳过（未配置/无产出）
+-- 子环 Q7_上架前低级错误检查（共享输入：无）--
+  · task.md 已生成（Q7_上架前低级错误检查）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q8_入库（共享输入：无）--
+  · task.md 已生成（Q8_入库）
+  ✔ output.md（执行者 审核AI）
+  ✔ 无审核者 → output.md 直接为 final.md
+-- 子环 Q9_推演下一章（共享输入：无）--
+  · task.md 已生成（Q9_推演下一章）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+=== 环节【04_审核】完成，已写 放行.json（confirmed=false），等待 UI 放行 ===
+▶▶ 02_写作 / 第002章
+=== 环节【02_写作】开始（4 子环/段组）===
+-- 子环 W1_章前对齐卡（共享输入：无）--
+  · task.md 已生成（W1_章前对齐卡）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 复合子环 W2_分布（6 段：始→显→通→动→成→终）--
+  · 段 始（W2_分布/始）
+  · task.md 已生成（W2_分布/始）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 显（W2_分布/显）
+  · task.md 已生成（W2_分布/显）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 通（W2_分布/通）
+  · task.md 已生成（W2_分布/通）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 动（W2_分布/动）
+  · task.md 已生成（W2_分布/动）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 成（W2_分布/成）
+  · task.md 已生成（W2_分布/成）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 终（W2_分布/终）
+  · task.md 已生成（W2_分布/终）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  ✔ 已拼接 第002章_正文.md（6 段）
+-- 复合子环 W3_正文（6 段：始→显→通→动→成→终）--
+  · 段 始（W3_正文/始）
+  · task.md 已生成（W3_正文/始）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 显（W3_正文/显）
+  · task.md 已生成（W3_正文/显）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 通（W3_正文/通）
+  · task.md 已生成（W3_正文/通）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 动（W3_正文/动）
+  · task.md 已生成（W3_正文/动）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 成（W3_正文/成）
+  · task.md 已生成（W3_正文/成）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  · 段 终（W3_正文/终）
+  · task.md 已生成（W3_正文/终）
+  ✔ output.md（执行者 写作AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+  ✔ 已拼接 第002章_正文.md（6 段）
+-- 子环 W4_章内节奏自检（共享输入：无）--
+  · task.md 已生成（W4_章内节奏自检）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+=== 环节【02_写作】完成，已写 放行.json（confirmed=false），等待 UI 放行 ===
+▶▶ 03_去AI / 第002章
+=== 环节【03_去AI】开始（1 子环/段组）===
+-- 子环 R1_润色（共享输入：无）--
+  · task.md 已生成（R1_润色）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+=== 环节【03_去AI】完成，已写 放行.json（confirmed=false），等待 UI 放行 ===
+▶▶ 04_审核 / 第002章
+=== 环节【04_审核】开始（9 子环/段组）===
+-- 子环 Q1_逻辑设定一致（共享输入：无）--
+  · task.md 已生成（Q1_逻辑设定一致）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q2_平台合规（共享输入：无）--
+  · task.md 已生成（Q2_平台合规）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q3_爽点节奏（共享输入：无）--
+  · task.md 已生成（Q3_爽点节奏）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q4_文风格式回查（共享输入：无）--
+  · task.md 已生成（Q4_文风格式回查）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q5_质检汇总（共享输入：无）--
+  · task.md 已生成（Q5_质检汇总）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q6_成书检验（共享输入：无）--
+  · task.md 已生成（Q6_成书检验）
+  ◆ mode=lock（AI 审计 + 人锁）
+  ✔ audit.md（审计者 智谱清言）
+  ⏸ lock 环：审计已完成，等待人锁定（locked.json）
+  ⊘ 子环 Q6_成书检验 跳过（未配置/无产出）
+-- 子环 Q7_上架前低级错误检查（共享输入：无）--
+  · task.md 已生成（Q7_上架前低级错误检查）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+-- 子环 Q8_入库（共享输入：无）--
+  · task.md 已生成（Q8_入库）
+  ✔ output.md（执行者 审核AI）
+  ✔ 无审核者 → output.md 直接为 final.md
+-- 子环 Q9_推演下一章（共享输入：无）--
+  · task.md 已生成（Q9_推演下一章）
+  ◆ mode=mesh（全网格赛马：5 写手）
+  · 写手1/5：豆包
+  · 写手2/5：通义千问
+  · 写手3/5：DeepSeek
+  · 写手4/5：Kimi
+  · 写手5/5：腾讯元宝
+  ✔ 收齐 5 份候选稿
+  ✔ 已匿名化（_盲审稿.md）
+  ✔ 收齐 3 份盲审
+  ✔ mesh 汇总择优完成（汇总者 豆包）→ final.md
+=== 环节【04_审核】完成，已写 放行.json（confirmed=false），等待 UI 放行 ===
+▶▶ 05_出厂
+=== 环节【05_出厂】开始（3 子环/段组）===
+-- 子环 5-1_低级错误（共享输入：03_去AI/第001章_润色定稿.md）--
+  · task.md 已生成（5-1_低级错误）
+  ✔ output.md（执行者 出厂AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+-- 子环 5-2_名称与章号统一 --
+  · task.md 已生成（5-2_名称与章号统一）
+  ✔ output.md（执行者 出厂AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+-- 子环 5-3_定稿打包归档 --
+  · task.md 已生成（5-3_定稿打包归档）
+  ✔ output.md（执行者 出厂AI）
+  ✔ review.md（审核者 审核AI）
+  ✔ adjusted.md（调整者 调整AI）
+  ✔ 审核 FAIL → 调整 → final.md
+=== 环节【05_出厂】完成，已写 放行.json（confirmed=false），等待 UI 放行 ===
+== run_book 返回: F:/赛马23环整合工作室/_整合工作区/diag_proj\项目B\05_出厂\放行.json
+== 目录树 ==
+  01_规划/一句话故事: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/上架简介: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/世界规则最小集: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/主角设计: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/书名设计: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/伏笔时间线关系表: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/分卷结构: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/前30章章纲: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/发布与合规: final=0 正文=0 子目录=['candidate.md', 'pending.json', 'task.md']
+  01_规划/封面设计规划: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/开篇黄金三章爆破: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/情绪规划: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/文档与备份: final=0 正文=0 子目录=['candidate.md', 'pending.json', 'task.md']
+  01_规划/文风与叙事基调: final=0 正文=0 子目录=['candidate.md', 'pending.json', 'task.md']
+  01_规划/标签选择: final=0 正文=0 子目录=['candidate.md', 'pending.json', 'task.md']
+  01_规划/核心冲突与反派: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/核心配角与人物关系: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/简介与主题: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/类型平台读者卖点: final=0 正文=0 子目录=['candidate.md', 'pending.json', 'task.md']
+  01_规划/结局与终局: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/节奏规划: final=1 正文=0 子目录=['_盲审稿.md', 'draft_1.md', 'draft_2.md', 'draft_3.md', 'draft_4.md', 'draft_5.md', 'final.md', 'review_1.md']
+  01_规划/规划前约束: final=0 正文=0 子目录=['candidate.md', 'pending.json', 'task.md']
+  01_规划/规划验收: final=0 正文=0 子目录=['audit.md', 'locked.json', 'task.md']
+  02_写作/第001章: final=14 正文=2 子目录=['W1_章前对齐卡', 'W2_分布', 'W3_正文', 'W4_章内节奏自检', '放行.json']
+  02_写作/第002章: final=14 正文=2 子目录=['W1_章前对齐卡', 'W2_分布', 'W3_正文', 'W4_章内节奏自检', '放行.json']
+  03_去AI/第001章: final=1 正文=0 子目录=['R1_润色', '放行.json']
+  03_去AI/第002章: final=1 正文=0 子目录=['R1_润色', '放行.json']
+  04_审核/第001章: final=8 正文=0 子目录=['Q1_逻辑设定一致', 'Q2_平台合规', 'Q3_爽点节奏', 'Q4_文风格式回查', 'Q5_质检汇总', 'Q6_成书检验', 'Q7_上架前低级错误检查', 'Q8_入库']
+  04_审核/第002章: final=8 正文=0 子目录=['Q1_逻辑设定一致', 'Q2_平台合规', 'Q3_爽点节奏', 'Q4_文风格式回查', 'Q5_质检汇总', 'Q6_成书检验', 'Q7_上架前低级错误检查', 'Q8_入库']
+  05_出厂/5-1_低级错误: final=1 正文=0 子目录=['adjusted.md', 'final.md', 'output.md', 'review.md', 'task.md']
+  05_出厂/5-2_名称与章号统一: final=1 正文=0 子目录=['adjusted.md', 'final.md', 'output.md', 'review.md', 'task.md']
+  05_出厂/5-3_定稿打包归档: final=1 正文=0 子目录=['adjusted.md', 'final.md', 'output.md', 'review.md', 'task.md']

@@ -1,0 +1,902 @@
+"""assign_panel.py — 程序二·协同写作指派 + 子步图标门控面板。
+
+【多选版改动】
+- 执行者：一排可多选的按钮（点选切换，可多选）
+- 审核者：一排可多选的按钮（点选切换，可多选）
+- 调整者：单下拉（单选）
+- 汇总者：在主窗口左侧工具栏（不在本面板）
+
+每行右侧用 ✔ / ✖ 图标按钮替代原「重发」按钮；
+点击 ✖ 时从该子步起（跨大环节）全部置 fail，自动流程从断点推进。
+"""
+from PySide6.QtWidgets import (QGroupBox, QVBoxLayout, QHBoxLayout, QScrollArea,
+                               QGridLayout, QWidget, QLabel, QComboBox, QPushButton,
+                               QTextEdit, QSizePolicy, QMessageBox, QCheckBox)
+from PySide6.QtCore import Qt, QSize, QPointF, QTimer
+from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QPen, QPolygonF
+
+# 按钮立体样式（深色主题）：渐变底 + 上亮下暗边框 + 按压下沉
+BTN_3D_QSS = """
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #5a6068, stop:0.5 #42474e, stop:1 #33383e);
+    color: #ffffff;
+    font-weight: bold;
+    border: 1px solid #1c2024;
+    border-top: 1px solid #7d848d;
+    border-radius: 4px;
+    padding: 2px 0px 3px 0px;
+}
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #6a7178, stop:0.5 #4d535a, stop:1 #3b4046);
+}
+QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #33383e, stop:1 #2b3036);
+    padding-top: 3px;
+    padding-bottom: 2px;
+}
+QPushButton:disabled {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #5a5f66, stop:0.5 #4a4f55, stop:1 #3d4248);
+    color:#9aa0a6;
+    border:1px solid #2b3036;
+    border-top:1px solid #6b7178;
+}
+"""
+
+
+def make_status_icon(kind, size=16):
+    """画一枚醒目的彩色状态图标：stop=红方块 pause=橙双杠 play=绿三角 check=绿对勾"""
+    pm = QPixmap(size, size)
+    pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    s = size / 16.0
+    if kind == "stop":
+        p.setPen(QPen(QColor("#7f0000"), 1))
+        p.setBrush(QColor("#e53935"))
+        p.drawRoundedRect(int(2*s), int(2*s), int(12*s), int(12*s), int(3*s), int(3*s))
+        p.setPen(QPen(QColor("#ffffff"), int(1.6*s)))
+        p.drawLine(int(5*s), int(8*s), int(11*s), int(8*s))
+    elif kind == "pause":
+        p.setPen(QPen(QColor("#7a3c00"), 1))
+        p.setBrush(QColor("#fb8c00"))
+        p.drawRoundedRect(int(3*s), int(3*s), int(4*s), int(10*s), int(1*s), int(1*s))
+        p.drawRoundedRect(int(9*s), int(3*s), int(4*s), int(10*s), int(1*s), int(1*s))
+    elif kind == "play":
+        p.setPen(QPen(QColor("#0d5c1e"), 1))
+        p.setBrush(QColor("#2eb84d"))
+        p.drawPolygon(QPolygonF([QPointF(4*s, 2*s), QPointF(13*s, 8*s), QPointF(4*s, 14*s)]))
+    elif kind == "check":
+        p.setPen(QPen(QColor("#1e8e3e"), int(3*s), Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        p.drawLine(int(3*s), int(9*s), int(7*s), int(13*s))
+        p.drawLine(int(7*s), int(13*s), int(13*s), int(4*s))
+    p.end()
+    return QIcon(pm)
+
+import os
+import math
+import stage_board as sb
+
+
+# ────────────────────────────────────────────────────────────
+# 多选按钮组控件
+# ────────────────────────────────────────────────────────────
+class MultiToggleGroup(QWidget):
+    """一排可多选的按钮组：点哪个选中哪个，再点取消。
+    selected() 返回选中的 AI 名列表；set_selected(list) 设初始值。
+    """
+    @staticmethod
+    def _btn_qss():
+        return """
+            QPushButton{padding:1px 6px;font-size:11px;color:#cfcfcf;
+                border:1px solid #3a3a3a;border-radius:3px;background:#1e1e1e;}
+            QPushButton:checked{color:#fff;background:#1a73e8;border-color:#1a73e8;}
+            QPushButton:hover{border-color:#5a5a5a;}
+        """
+
+    def __init__(self, all_ais, initial=None, on_change=None):
+        super().__init__()
+        self.all_ais = list(all_ais)   # 不含"（未指派）"
+        self._buttons = []
+        self._on_change = on_change
+        h = QHBoxLayout(self)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.setSpacing(2)
+        initial_set = set(initial or [])
+        for name in self.all_ais:
+            btn = QPushButton(name)
+            btn.setCheckable(True)
+            btn.setChecked(name in initial_set)
+            btn.setMaximumHeight(20)
+            btn.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+            btn.setStyleSheet(self._btn_qss())
+            btn.toggled.connect(self._on_toggled)
+            h.addWidget(btn)
+            self._buttons.append(btn)
+        h.addStretch(1)
+
+    def _on_toggled(self, _):
+        if self._on_change:
+            self._on_change(self.selected())
+
+    def selected(self):
+        return [b.text() for b in self._buttons if b.isChecked()]
+
+    def set_selected(self, names):
+        s = set(names or [])
+        for b in self._buttons:
+            b.blockSignals(True)
+            b.setChecked(b.text() in s)
+            b.blockSignals(False)
+
+    def set_all_ais(self, all_ais, keep_current=True):
+        cur = set(self.selected()) if keep_current else set()
+        layout = self.layout()
+        while layout.count():
+            item = layout.takeAt(0)
+            w = item.widget()
+            if w:
+                w.deleteLater()
+        self._buttons = []
+        self.all_ais = list(all_ais)
+        for name in self.all_ais:
+            btn = QPushButton(name)
+            btn.setCheckable(True)
+            btn.setChecked(name in cur)
+            btn.setMaximumHeight(20)
+            btn.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+            btn.setStyleSheet(self._btn_qss())
+            btn.toggled.connect(self._on_toggled)
+            layout.addWidget(btn)
+            self._buttons.append(btn)
+        layout.addStretch(1)
+
+    def is_empty(self):
+        return not any(b.isChecked() for b in self._buttons)
+
+
+class AssignPanel(QWidget):
+    def __init__(self, with_runner=True, stages=None, columns=1, step_columns=2, step_slice=None):
+        super().__init__()
+        self.state, _ = sb.load()
+        self.run_state = sb.new_run_state()
+        sb.save(self.state, self.run_state)
+        self.ais = ["（未指派）"] + sb.available_ais()
+        self.role_ais = ["（未指派）"] + (sb.all_local_ais() or sb.local_ais() or sb.available_ais())
+        self.run_callback = None
+        self.gate_changed_callback = None
+        self.release_advance_callback = None
+        self.manual_next_callback = None
+        self.open_plan_callback = None
+        self.manual_mode = False
+        self.with_runner = with_runner
+        self.columns = max(1, int(columns))
+        self.step_columns = max(1, int(step_columns))
+        self.step_slice = step_slice
+
+        if stages:
+            self.pipeline = [st for st in sb.PIPELINE if st["key"] in stages]
+        else:
+            self.pipeline = sb.PIPELINE
+
+        self.block_toggles = {}      # 执行块：多选按钮组（key: (sk, sn, block)）
+        self.reviewer_toggles = {}   # 审核者：多选按钮组（key: (sk, sn)）
+        self.role_combos = {}        # 只有 adjuster 单下拉（key: (sk, sn, "adjuster")）
+        self.badges = {}
+        self.chapter_labels = {}
+        self.pass_btns = {}
+        self.stop_btns = {}
+        self.pause_btns = {}
+        self.assign_mode = False
+        self.stage_running = False
+        self._start_locked = False
+        self.item_icon_btns = {}
+        self._blink_level = 1.0
+        self._blink_phase = 0.0
+        self._blink_timer = QTimer(self)
+        self._blink_timer.timeout.connect(self._tick_blink)
+        self._blink_timer.start(50)
+
+        self._build()
+        self._refresh_gates()
+
+    def _build(self):
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(2)
+
+        if self.columns == 1:
+            cv = outer
+            grid = None
+        else:
+            cv = None
+            grid = QGridLayout()
+            grid.setContentsMargins(0, 0, 0, 0)
+            grid.setHorizontalSpacing(6)
+            grid.setVerticalSpacing(4)
+            outer.addLayout(grid)
+
+        for idx, st in enumerate(self.pipeline):
+            sk = st["key"]
+            g = QGroupBox("")
+            g.setToolTip(st.get("desc", ""))
+            g.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            g.setMinimumWidth(260)
+            gv = QGridLayout(g)
+            gv.setContentsMargins(6, 4, 6, 4)
+            gv.setSpacing(3)
+            gv.setHorizontalSpacing(10)
+
+            head = QHBoxLayout()
+            head.setSpacing(8)
+            head.addWidget(QLabel(f"环节 {sb.STAGE_ORDER.index(sk)+1}/5"))
+            chapter_label = QLabel("")
+            chapter_label.setStyleSheet("color:#ffd54f;font-weight:bold;font-size:13px;")
+            chapter_label.setToolTip("当前章号与对应产物文件夹")
+            chapter_label.setMinimumWidth(150)
+            head.addWidget(chapter_label)
+            self.chapter_labels[sk] = chapter_label
+            badge = QLabel("")
+            badge.setStyleSheet("font-weight:bold;")
+            head.addStretch(1)
+            pause_btn = QPushButton("暂停")
+            pause_btn.setIcon(make_status_icon("pause"))
+            pause_btn.setIconSize(QSize(14, 14))
+            pause_btn.setToolTip("暂停当前运行")
+            pause_btn.setFixedWidth(70)
+            pause_btn.setMinimumHeight(24)
+            pause_btn.setStyleSheet(BTN_3D_QSS)
+            pause_btn.clicked.connect(lambda _, k=sk: self._on_pause(k))
+            head.addWidget(pause_btn)
+            self.status_dot = QLabel("")
+            self.status_dot.setFixedSize(14, 14)
+            self.status_dot.setAlignment(Qt.AlignCenter)
+            self.status_dot.setToolTip("环节状态：绿=已完成，黄=生产中，红=未启动")
+            head.addWidget(self.status_dot)
+            gv.addLayout(head, 0, 0, 1, self.step_columns)
+            self.badges[sk] = badge
+            self.pause_btns[sk] = pause_btn
+
+            step_idx = 0
+            _all_steps = st["steps"]
+            if self.step_slice:
+                _s0, _s1 = self.step_slice
+                _all_steps = _all_steps[_s0:_s1]
+            for step in _all_steps:
+                sn = step["name"]
+                norms = "规范评估全开" if step.get("norms") else "仅内容评估(无规范)"
+                tag = "【终审】" if (step.get("final") and not step.get("blocks")) else ""
+                sv = QVBoxLayout()
+                sv.setSpacing(3)
+                sv.addWidget(QLabel(f"· {sn} {tag}  [{norms}]"))
+                sv_w = QWidget()
+                sv_w.setLayout(sv)
+                _r = 1 + step_idx // self.step_columns
+                _c = step_idx % self.step_columns
+                gv.addWidget(sv_w, _r, _c)
+                step_idx += 1
+
+                form = QGridLayout()
+                form.setContentsMargins(0, 0, 0, 0)
+                form.setHorizontalSpacing(6)
+                form.setVerticalSpacing(4)
+                form.setColumnStretch(0, 0)
+                form.setColumnStretch(1, 1)
+                sv.addLayout(form)
+                r = 0
+
+                # ── 1) 执行块（多选按钮组）──
+                if not (step.get("final") and not step.get("blocks")):
+                    for b in step.get("blocks", []):
+                        lab = QLabel(f"  ▸ {b}:")
+                        cur = self.state[sk]["steps"][sn]["blocks"].get(b)
+                        cur_list = cur if isinstance(cur, list) else ([cur] if cur else [])
+                        tg = MultiToggleGroup(
+                            self.ais[1:], initial=cur_list,
+                            on_change=lambda vals, k=sk, s=sn, bb=b: self._on_block(k, s, bb, vals))
+                        icons = self._make_gate_icons(sk, sn, b)
+                        form.addWidget(lab, r, 0, Qt.AlignLeft | Qt.AlignVCenter)
+                        form.addWidget(tg, r, 1)
+                        form.addWidget(icons, r, 2, Qt.AlignRight | Qt.AlignVCenter)
+                        self.block_toggles[(sk, sn, b)] = tg
+                        r += 1
+
+                # ── 2) 审核者（多选按钮组）──
+                rlabel = "终审放行评审" if (step.get("final") and not step.get("blocks")) else "审核者"
+                lab = QLabel(f"  {rlabel}:")
+                cur = self.state[sk]["steps"][sn].get("reviewer")
+                cur_list = cur if isinstance(cur, list) else ([cur] if cur else [])
+                tg = MultiToggleGroup(
+                    self.role_ais[1:], initial=cur_list,
+                    on_change=lambda vals, k=sk, s=sn: self._on_role(k, s, "reviewer", vals))
+                icons = self._make_gate_icons(sk, sn, "reviewer")
+                form.addWidget(lab, r, 0, Qt.AlignLeft | Qt.AlignVCenter)
+                form.addWidget(tg, r, 1)
+                form.addWidget(icons, r, 2, Qt.AlignRight | Qt.AlignVCenter)
+                self.reviewer_toggles[(sk, sn)] = tg
+                r += 1
+
+                # ── 3) 调整者（单下拉）──
+                lab = QLabel(f"  调整者:")
+                c = self._combo_role(self.state[sk]["steps"][sn].get("adjuster"))
+                c.currentTextChanged.connect(
+                    lambda v, k=sk, s=sn: self._on_role(k, s, "adjuster", v))
+                icons = self._make_gate_icons(sk, sn, "adjuster")
+                form.addWidget(lab, r, 0, Qt.AlignLeft | Qt.AlignVCenter)
+                form.addWidget(c, r, 1)
+                form.addWidget(icons, r, 2, Qt.AlignRight | Qt.AlignVCenter)
+                self.role_combos[(sk, sn, "adjuster")] = c
+                r += 1
+
+            if cv is not None:
+                cv.addWidget(g)
+            else:
+                row = idx // self.columns
+                col = idx % self.columns
+                grid.addWidget(g, row, col)
+
+        if cv is not None:
+            cv.addStretch(1)
+
+        if self.columns == 1 and not self.with_runner:
+            foot = QVBoxLayout()
+            foot.setContentsMargins(0, 0, 0, 0)
+            foot.setSpacing(4)
+
+            row1 = QHBoxLayout()
+            row1.setContentsMargins(0, 0, 0, 0)
+            row1.setSpacing(4)
+            self.manual_cb = QCheckBox("手动模式")
+            self.manual_cb.setToolTip("开启后断开全自动：点【发送下一个子项】逐块手动发送，便于逐步核对产出")
+            self.manual_cb.stateChanged.connect(self._on_manual_toggle)
+            row1.addWidget(self.manual_cb)
+            self.start_btn = QPushButton("启动")
+            self.start_btn.setIcon(make_status_icon("play"))
+            self.start_btn.setIconSize(QSize(14, 14))
+            self.start_btn.setToolTip("启动当前大环节（全自动连续跑完本环节）")
+            self.start_btn.setMinimumWidth(120)
+            self.start_btn.setMaximumHeight(24)
+            self.start_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            self.start_btn.setStyleSheet(BTN_3D_QSS)
+            self.start_btn.clicked.connect(self._on_run)
+            row1.addWidget(self.start_btn)
+            row1.addStretch(1)
+            foot.addLayout(row1)
+
+            row2 = QHBoxLayout()
+            row2.setContentsMargins(0, 0, 0, 0)
+            row2.setSpacing(4)
+            self.next_btn = QPushButton("▶ 发送下一个子项")
+            self.next_btn.setIcon(make_status_icon("play"))
+            self.next_btn.setIconSize(QSize(14, 14))
+            self.next_btn.setToolTip("手动模式：点击发送本环节下一个待运行的子项（块/审核/调整），逐步核对")
+            self.next_btn.setMinimumWidth(150)
+            self.next_btn.setMaximumHeight(24)
+            self.next_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            self.next_btn.setStyleSheet(BTN_3D_QSS)
+            self.next_btn.clicked.connect(self._on_next)
+            self.next_btn.setEnabled(False)
+            row2.addWidget(self.next_btn)
+            sk = self.pipeline[0]["key"]
+            pass_btn = QPushButton("放行")
+            pass_btn.setIcon(make_status_icon("check"))
+            pass_btn.setIconSize(QSize(14, 14))
+            pass_btn.setToolTip("本环节所有子步都通过(✔)后放行；点 ✖ 可从断点重新推进")
+            pass_btn.setMinimumWidth(120)
+            pass_btn.setMaximumHeight(24)
+            pass_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            pass_btn.setStyleSheet(BTN_3D_QSS)
+            pass_btn.clicked.connect(lambda _, k=sk: self._pass_stage(k))
+            row2.addWidget(pass_btn)
+            row2.addStretch(1)
+            foot.addLayout(row2)
+
+            self.hint_label = QLabel("")
+            self.hint_label.setWordWrap(True)
+            self.hint_label.setAlignment(Qt.AlignCenter)
+            self.hint_label.setMinimumHeight(18)
+            outer.addWidget(self.hint_label)
+            outer.addLayout(foot)
+            self.pass_btns[sk] = pass_btn
+
+        if self.with_runner:
+            foot = QHBoxLayout()
+            self.b_run = QPushButton("▶ 运行当前大环节")
+            self.b_run.clicked.connect(self._run_current)
+            foot.addWidget(self.b_run)
+            foot.addStretch(1)
+            outer.addLayout(foot)
+            self.log = QTextEdit()
+            self.log.setReadOnly(True)
+            self.log.setMinimumHeight(90)
+            self.log.setMaximumHeight(160)
+            outer.addWidget(self.log)
+
+    def set_ais(self, players):
+        self.ais = ["（未指派）"] + list(players)
+        self.role_ais = list(self.ais)
+        for tg in self.block_toggles.values():
+            tg.set_all_ais(self.ais[1:], keep_current=True)
+        for tg in self.reviewer_toggles.values():
+            tg.set_all_ais(self.role_ais[1:], keep_current=True)
+        for c in self.role_combos.values():
+            cur = c.currentText()
+            c.blockSignals(True)
+            c.clear()
+            c.addItems(self.role_ais)
+            c.setCurrentText(cur if cur in self.role_ais else "（未指派）")
+            c.blockSignals(False)
+
+    def _combo_role(self, current):
+        c = QComboBox()
+        c.setMaximumHeight(20)
+        c.setToolTip("只显示已启动（绿灯）的 AI")
+        role_ais = list(getattr(self, "role_ais", self.ais))
+        cur = current or "（未指派）"
+        if isinstance(cur, list):
+            cur = cur[0] if cur else "（未指派）"
+        c.addItems(role_ais)
+        c.setCurrentText(cur if cur in role_ais else "（未指派）")
+        return c
+
+    @staticmethod
+    def _gate_qss(color, size=20, level=1.0):
+        radius = size // 2
+        if not color:
+            return (f"QPushButton{{border-radius:{radius}px; background:transparent;"
+                    "border:1px solid #5f6368;}"
+                    "QPushButton:hover{border:1px solid #9aa0a6;}")
+        h = color.lstrip("#")
+        r0, g0, b0 = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        r0, g0, b0 = int(r0 * level), int(g0 * level), int(b0 * level)
+        hi_alpha = int(235 * level)
+        hi = f"rgba(255,255,255,{hi_alpha})"
+        stop_mid = 0.28 + 0.10 * (1 - level)
+        base = "#%02x%02x%02x" % (r0, g0, b0)
+        dark = "#%02x%02x%02x" % (int(r0 * 0.55), int(g0 * 0.55), int(b0 * 0.55))
+        return (f"QPushButton{{border-radius:{radius}px;"
+                "background:qradialgradient(cx:0.32, cy:0.28, radius:0.88,"
+                f" stop:0 {hi}, stop:{stop_mid:.2f} {base}, stop:1 {dark});"
+                f"border:1px solid {dark};}}"
+                "QPushButton:pressed{background:#ffffff;}")
+
+    def _make_gate_icons(self, sk, sn, item):
+        w = QWidget()
+        h = QHBoxLayout(w)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.setSpacing(2)
+        pb = QPushButton("")
+        pb.setFixedSize(20, 20)
+        pb.setToolTip(f"通过：{sn}/{item}")
+        pb.clicked.connect(lambda _, k=sk, s=sn, it=item: self._on_item_pass(k, s, it))
+        fb = QPushButton("")
+        fb.setFixedSize(20, 20)
+        fb.setToolTip(f"不通过：{sn}/{item}")
+        fb.clicked.connect(lambda _, k=sk, s=sn, it=item: self._on_item_fail(k, s, it))
+        h.addWidget(pb)
+        h.addWidget(fb)
+        self.item_icon_btns.setdefault((sk, sn, item), []).append((pb, fb))
+        return w
+
+    def _on_block(self, sk, sn, block, vals):
+        """执行块：vals 是 list；空列表存 None。"""
+        v = list(vals) if vals else None
+        sb.assign_block(self.state, sk, sn, block, v)
+        self._save()
+
+    def _on_role(self, sk, sn, role, val):
+        """reviewer 收 list；adjuster 收 str。"""
+        if role == "reviewer" and isinstance(val, list):
+            v = val if val else None
+        else:
+            v = None if val == "（未指派）" else val
+        sb.assign_role(self.state, sk, sn, role, v)
+        self._save()
+
+    def _on_item_pass(self, sk, sn, item):
+        self._refresh_gates()
+        self._log(f"✖ 不支持手动点绿：{sk}/{sn}/{item} 需由实际跑出真实产物后自动变绿")
+
+    def _on_item_fail(self, sk, sn, item):
+        sb.cascade_fail_from_item(self.run_state, sk, sn, item)
+        n = self._reject_artifacts_from(sk, sn, item)
+        self._save()
+        self._refresh_gates()
+        self._unlock_start()
+        self._log(f"✖ {sk}/{sn}/{item} 不通过，后续已全部级联为不通过"
+                  + (f"；已作废 {n} 个旧产物，重跑将从该子项开始" if n else ""))
+
+    def _reject_artifacts_from(self, sk, sn, item):
+        try:
+            import auto_stage as _as
+        except Exception:
+            return 0
+        try:
+            seq = sb._all_items_seq()
+            i = seq.index((sk, sn, item))
+        except (ValueError, AttributeError):
+            return 0
+        ch = _as.get_current_chapter()
+        n = 0
+        for k, s, it in seq[i:]:
+            try:
+                p = _as._item_artifact_path(k, s, it, ch)
+            except Exception:
+                continue
+            if not p or not os.path.exists(p):
+                continue
+            try:
+                os.replace(p, p + ".已作废")
+                n += 1
+            except Exception:
+                pass
+        return n
+
+    def _tick_blink(self):
+        self._blink_phase += 0.05
+        period = 5.0
+        w = (self._blink_phase % period) / period
+        self._blink_level = 0.5 + 0.5 * math.sin(2 * math.pi * w)
+        self._paint_dots()
+
+    def _paint_dots(self, level=None):
+        if level is None:
+            level = getattr(self, "_blink_level", 1.0)
+        if not hasattr(self, "item_icon_btns"):
+            return
+        for (sk, sn, item), pairs in self.item_icon_btns.items():
+            v = self.run_state["stages"][sk].get("item_status", {}).get(sn, {}).get(item, "none")
+            for pb, fb in pairs:
+                if v == "pass":
+                    pb.setStyleSheet(self._gate_qss("#1e8e3e", level=level))
+                    fb.setStyleSheet(self._gate_qss(None))
+                elif v == "running":
+                    pb.setStyleSheet(self._gate_qss("#f9ab00", level=level))
+                    fb.setStyleSheet(self._gate_qss(None))
+                else:
+                    pb.setStyleSheet(self._gate_qss(None))
+                    fb.setStyleSheet(self._gate_qss("#d93025", level=1.0))
+                pb.setEnabled(False)
+                fb.setEnabled(True)
+        if hasattr(self, "status_dot") and self.pipeline:
+            sk0 = self.pipeline[0]["key"]
+            st_status = self.run_state["stages"][sk0]["status"]
+            if st_status == "passed":
+                c, tip = "#1e8e3e", "已完成"
+            elif st_status == "running":
+                c, tip = "#f9ab00", "生产中"
+            else:
+                c, tip = "#d93025", "未启动"
+            lvl = 1.0 if c == "#d93025" else level
+            self.status_dot.setStyleSheet(self._status_dot_style(c, lvl))
+            self.status_dot.setToolTip(f"环节状态：{tip}")
+
+    @staticmethod
+    def _status_dot_style(c, level=1.0):
+        h = c.lstrip("#")
+        r0, g0, b0 = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        r0, g0, b0 = int(r0 * level), int(g0 * level), int(b0 * level)
+        hi_alpha = int(235 * level)
+        hi = f"rgba(255,255,255,{hi_alpha})"
+        stop_mid = 0.28 + 0.10 * (1 - level)
+        base = "#%02x%02x%02x" % (r0, g0, b0)
+        dark = "#%02x%02x%02x" % (int(r0 * 0.55), int(g0 * 0.55), int(b0 * 0.55))
+        return (f"border-radius:7px; border:1px solid {dark};"
+                f"background:qradialgradient(cx:0.32, cy:0.28, radius:0.88,"
+                f" stop:0 {hi}, stop:{stop_mid:.2f} {base}, stop:1 {dark});")
+
+    def set_running(self, on):
+        on = bool(on)
+        if getattr(self, "stage_running", False) != on:
+            self.stage_running = on
+            self._refresh_gates()
+
+    def _refresh_item_status(self):
+        self._paint_dots()
+        cur = self.run_state["current_stage"]
+        for sk in sb.STAGE_ORDER:
+            if sk not in self.pass_btns:
+                continue
+            btn = self.pass_btns[sk]
+            if getattr(self, "assign_mode", False):
+                btn.setEnabled(True)
+                continue
+            btn.setEnabled(
+                sk == cur
+                and sb.previous_stages_passed(self.run_state, sk)
+                and sb.stage_all_passed(self.run_state, sk))
+
+    def _pass_stage(self, sk):
+        if getattr(self, "assign_mode", False):
+            self._log("🧩 指派模式：切换到下一环节（不改变运行门控）")
+            if self.release_advance_callback:
+                try:
+                    order = sb.STAGE_ORDER
+                    i = order.index(sk)
+                    nxt = order[i + 1] if i + 1 < len(order) else None
+                    self.release_advance_callback(nxt)
+                except Exception as e:
+                    self._log(f"❌ 切换下一环节失败：{e}")
+            return
+        if not sb.previous_stages_passed(self.run_state, sk):
+            QMessageBox.warning(self, "不能跳过", "请先放行前面的环节。")
+            return
+        if not sb.stage_all_passed(self.run_state, sk):
+            QMessageBox.warning(self, "尚未通过", "本环节尚有未通过的子项，无法放行。")
+            return
+        sb.reset_later_stages(self.run_state, sk)
+        sb.user_passes_gate(self.run_state, sk)
+        self._save()
+        self._refresh_gates()
+        self._log(f"✅ 已放行环节「{sk}」→ 当前环节: {self.run_state['current_stage']}")
+        if self.gate_changed_callback:
+            try:
+                self.gate_changed_callback()
+            except Exception:
+                pass
+        if self.release_advance_callback:
+            try:
+                order = sb.STAGE_ORDER
+                i = order.index(sk)
+                nxt = order[i + 1] if i + 1 < len(order) else None
+                self.release_advance_callback(nxt)
+            except Exception:
+                pass
+
+    def _run_current(self):
+        if hasattr(self, "b_run") and not self.b_run.isEnabled():
+            return
+        self._lock_start()
+        sk = self.run_state["current_stage"]
+        self._log(f"▶ 运行大环节「{sk}」")
+        if self.run_callback:
+            try:
+                self.run_callback(sk)
+            except Exception as e:
+                self._log(f"❌ 运行回调异常: {e}")
+        else:
+            self._log("（未挂载执行器）")
+
+    def _on_run(self):
+        if not self.run_callback or not self.pipeline:
+            return
+        if hasattr(self, "start_btn") and not self.start_btn.isEnabled():
+            return
+        sk = self.pipeline[0]["key"]
+        if self._has_unassigned_for_stage(sk):
+            self._log(f"⛔ 大环节「{sk}」存在未指派的 AI，请先为所有子项选择 AI 后再启动")
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self, "存在未指派 AI",
+                f"大环节「{sk}」尚有子项未指派 AI。\n"
+                "请先为所有块/审核者/调整者选择 AI 后，再点击【启动】。")
+            return
+        self._lock_start()
+        self._log(f"▶ 启动大环节「{sk}」")
+        try:
+            self.run_callback(sk)
+        except Exception as e:
+            self._log(f"❌ 启动回调异常: {e}")
+
+    def _on_manual_toggle(self, state):
+        self.manual_mode = bool(state)
+        self._refresh_gates()
+        self.set_start_enabled(True)
+        if self.manual_mode:
+            self._log("🧩 已进入手动模式：全自动「启动」已断开；请点【发送下一个子项】逐块发送。")
+        else:
+            self._log("▶ 已退出手动模式：恢复「启动」全自动连续跑完本环节。")
+
+    def _on_next(self):
+        if not self.manual_next_callback or not self.pipeline:
+            return
+        if getattr(self, "_start_locked", False):
+            return
+        sk = self.pipeline[0]["key"]
+        if self._has_unassigned_for_stage(sk):
+            self._log(f"⛔ 大环节「{sk}」存在未指派的 AI，请先指派后再发送")
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self, "存在未指派 AI",
+                f"大环节「{sk}」尚有子项未指派 AI。\n"
+                "请先为所有块/审核者/调整者选择 AI 后，再点击【发送下一个子项】。")
+            return
+        self._lock_start()
+        self._log(f"▶ 手动发送下一个子项（{sk}）")
+        try:
+            self.manual_next_callback(sk)
+        except Exception as e:
+            self._log(f"❌ 发送异常: {e}")
+            self._unlock_start()
+
+    def _has_unassigned_for_stage(self, sk):
+        for (k, *_), tg in self.block_toggles.items():
+            if k == sk and tg.is_empty():
+                return True
+        for (k, _2), tg in self.reviewer_toggles.items():
+            if k == sk and tg.is_empty():
+                return True
+        for (k, *_3), c in self.role_combos.items():
+            if k == sk and c.currentText() == "（未指派）":
+                return True
+        return False
+
+    def _lock_start(self):
+        self._start_locked = True
+        if hasattr(self, "start_btn"):
+            self.start_btn.setEnabled(False)
+        if hasattr(self, "b_run"):
+            self.b_run.setEnabled(False)
+        if hasattr(self, "next_btn"):
+            self.next_btn.setEnabled(False)
+
+    def _unlock_start(self):
+        self._start_locked = False
+        if hasattr(self, "start_btn"):
+            self.start_btn.setEnabled(
+                not getattr(self, "manual_mode", False)
+                and not getattr(self, "assign_mode", False))
+        if hasattr(self, "b_run"):
+            self.b_run.setEnabled(True)
+        if hasattr(self, "next_btn"):
+            self.next_btn.setEnabled(
+                bool(getattr(self, "manual_mode", False))
+                and not getattr(self, "assign_mode", False))
+        self._refresh_gates()
+
+    def _auto_assign_first_ai(self, sk):
+        if len(self.ais) <= 1:
+            return
+        first = self.ais[1]
+        changed = False
+        for (k, *_1), tg in self.block_toggles.items():
+            if k != sk or not tg.is_empty():
+                continue
+            tg.set_selected([first])
+            changed = True
+        for (k, _2), tg in self.reviewer_toggles.items():
+            if k != sk or not tg.is_empty():
+                continue
+            tg.set_selected([first])
+            changed = True
+        for (k, *_3), c in self.role_combos.items():
+            if k != sk or c.currentText() != "（未指派）":
+                continue
+            c.setCurrentText(first)
+            changed = True
+        if changed:
+            self._log(f"已自动为「{sk}」未指派项选择第一个本地 AI：{first}")
+
+    def _on_stop(self, _sk=None):
+        self._log("⏹ 请求停止")
+        if self.stop_callback:
+            try:
+                self.stop_callback()
+            except Exception as e:
+                self._log(f"❌ 停止回调异常: {e}")
+
+    def _on_pause(self, _sk=None):
+        self._log("⏸ 请求暂停")
+        self._unlock_start()
+        if self.pause_callback:
+            try:
+                self.pause_callback()
+            except Exception as e:
+                self._log(f"❌ 暂停回调异常: {e}")
+
+    def _refresh_gates(self):
+        cur = self.run_state["current_stage"]
+        for sk in sb.STAGE_ORDER:
+            if sk not in self.badges:
+                continue
+            st = self.run_state["stages"][sk]
+            status = st["status"]
+            badge = self.badges[sk]
+            if sk == cur:
+                badge.setText("● 进行中（待你放行）")
+                badge.setStyleSheet("color:#1a73e8;font-weight:bold;")
+            elif status == "passed":
+                badge.setText("✅ 已放行")
+                badge.setStyleSheet("color:#1e8e3e;font-weight:bold;")
+            else:
+                badge.setText("⏳ 未开始")
+                badge.setStyleSheet("color:#888;")
+        if hasattr(self, "hint_label") and self.pipeline:
+            sk0 = self.pipeline[0]["key"]
+            all_passed = sb.stage_all_passed(self.run_state, sk0)
+            start_on = self.start_btn.isEnabled() if hasattr(self, "start_btn") else True
+            if getattr(self, "assign_mode", False):
+                txt, color = "AI 指派模式：请逐环节指派AI，指派完点【放行】切换下一环节", "#f9ab00"
+            elif all_passed:
+                txt, color = "当前环节已完成，请审核后点击放行按钮", "#1e8e3e"
+            elif getattr(self, "stage_running", False):
+                txt, color = "当前环节正在逐步进行中…", "#f9ab00"
+            elif getattr(self, "manual_mode", False):
+                txt, color = "手动模式：请指定AI后点【发送下一个子项】逐块发送", "#f9ab00"
+            elif start_on:
+                txt, color = "准备就绪，请指定AI后点击启动按钮", "#1e8e3e"
+            else:
+                txt, color = "初始化正在进行中，请耐心等候", "#f9ab00"
+            self.hint_label.setText(f"● {txt} ●")
+            self.hint_label.setStyleSheet(
+                f"color:{color}; font-size:14px; font-weight:bold; padding:1px 0;")
+        self._refresh_item_status()
+
+    def _save(self):
+        sb.save(self.state, self.run_state)
+
+    def _log(self, s):
+        if hasattr(self, "log"):
+            self.log.append(s)
+
+    def refresh(self):
+        self.state, self.run_state = sb.load()
+        for (sk, sn, b), tg in self.block_toggles.items():
+            v = self.state[sk]["steps"][sn]["blocks"].get(b)
+            v_list = v if isinstance(v, list) else ([v] if v else [])
+            tg.set_selected(v_list)
+        for (sk, sn), tg in self.reviewer_toggles.items():
+            v = self.state[sk]["steps"][sn].get("reviewer")
+            v_list = v if isinstance(v, list) else ([v] if v else [])
+            tg.set_selected(v_list)
+        for (sk, sn, role), c in self.role_combos.items():
+            v = self.state[sk]["steps"][sn].get(role) or "（未指派）"
+            if isinstance(v, list):
+                v = v[0] if v else "（未指派）"
+            c.setCurrentText(v if v in self.role_ais else "（未指派）")
+        self._refresh_gates()
+
+    def set_start_enabled(self, enabled):
+        if hasattr(self, "start_btn"):
+            if getattr(self, "_start_locked", False) or getattr(self, "assign_mode", False) \
+                    or getattr(self, "manual_mode", False):
+                self.start_btn.setEnabled(False)
+            else:
+                self.start_btn.setEnabled(bool(enabled))
+        if hasattr(self, "next_btn"):
+            self.next_btn.setEnabled(
+                bool(getattr(self, "manual_mode", False))
+                and not getattr(self, "assign_mode", False)
+                and not getattr(self, "_start_locked", False))
+
+    def set_assign_mode(self, on):
+        self.assign_mode = bool(on)
+        if hasattr(self, "start_btn"):
+            self.start_btn.setEnabled(
+                not self.assign_mode and not getattr(self, "_start_locked", False))
+        if hasattr(self, "next_btn"):
+            self.next_btn.setEnabled(
+                bool(getattr(self, "manual_mode", False))
+                and not self.assign_mode
+                and not getattr(self, "_start_locked", False))
+        self._refresh_gates()
+
+    def set_chapter_info(self, sk, text):
+        if sk in self.chapter_labels:
+            self.chapter_labels[sk].setText(text)
+
+    def _open_plan(self, sk, sn):
+        if self.open_plan_callback:
+            try:
+                self.open_plan_callback(sk, sn)
+                return
+            except Exception as e:
+                self._log(f"⚠ 打开规划失败：{e}")
+        self._log("（未挂载打开规划回调）")
+
+
+if __name__ == "__main__":
+    import sys
+    from PySide6.QtWidgets import QApplication, QMainWindow
+    app = QApplication(sys.argv)
+    w = QMainWindow()
+    w.setWindowTitle("程序二 · 指派面板（多选自测）")
+    w.resize(720, 820)
+    panel = AssignPanel()
+    panel.run_callback = lambda sk: panel._log(f"[demo] 将自动执行 {sk}")
+    w.setCentralWidget(panel)
+    w.show()
+    sys.exit(app.exec())

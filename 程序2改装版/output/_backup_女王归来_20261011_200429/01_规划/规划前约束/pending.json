@@ -1,0 +1,6 @@
+{
+  "confirmed": false,
+  "mode": "human",
+  "candidate": "candidate.md",
+  "hint": "请人工确认 candidate.md；确认后把 confirmed 置 true 并把定稿写为 final.md"
+}

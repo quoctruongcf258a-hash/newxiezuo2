@@ -1,0 +1,1 @@
+C:\Users\Administrator\.workbuddy\binaries\PortableGit\versions\1.2.0\bin\bash.exe: line 1: setsid: command not found

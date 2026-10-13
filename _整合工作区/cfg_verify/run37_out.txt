@@ -1,0 +1,11 @@
+get_cfg_rules_dir -> F:\赛马23环整合工作室\_整合工作区\cfg_verify\config
+规划环数: 8
+期望子项数: 56
+实际 final.md 数: 56
+draft_ 文件数(写手): 280
+review_ 文件数(盲审): 168
+汇总(final)数:  56
+缺失子项: []
+多余子项: []
+RESULT: PASS
+exit=0

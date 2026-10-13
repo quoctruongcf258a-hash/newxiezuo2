@@ -1,0 +1,8 @@
+alive=False pid=37744
+ExitCode=9
+--- stdout ---
+--- stderr ---
+C:\Users\Administrator\AppData\Local\Programs\CodeBuddy CN\CodeBuddy CN.exe: bad option: --remote-debugging-port=9223
+
+9223 listening: False
+process count: 0

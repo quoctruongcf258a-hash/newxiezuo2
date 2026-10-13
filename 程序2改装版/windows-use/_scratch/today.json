@@ -1,0 +1,39 @@
+{
+  "_说明": "今日阵容（由 UI 自动生成，勿手改）",
+  "opened": [
+    {
+      "key": "workbuddy",
+      "label": "WorkBuddy",
+      "vendor": "",
+      "region": "国内",
+      "form": "desktop",
+      "target": "F:\\Program\\WorkBuddy.exe",
+      "browser": "msedge",
+      "cdpPort": 9227,
+      "cdpMatch": "workbuddy"
+    },
+    {
+      "key": "doubao",
+      "label": "Doubao",
+      "vendor": "",
+      "region": "国内",
+      "form": "desktop",
+      "target": "F:\\Program Files\\com.tencent.pcgame.doubao\\Doubao\\app\\Doubao.exe",
+      "browser": "msedge",
+      "cdpPort": 9231,
+      "cdpMatch": "doubao"
+    },
+    {
+      "key": "codebuddy",
+      "label": "CodeBuddy",
+      "vendor": "",
+      "region": "国内",
+      "form": "desktop",
+      "target": "",
+      "browser": "msedge",
+      "cdpPort": 9223,
+      "cdpMatch": "codebuddy"
+    }
+  ],
+  "merge_app": "workbuddy"
+}

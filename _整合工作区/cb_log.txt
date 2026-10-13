@@ -1,0 +1,89 @@
+== C:\Users\Administrator\AppData\Roaming\CodeBuddy CN  (最近修改 10/11/2026 08:57:13)
+   automations  10/11/2026 08:55:16
+   Backups  10/11/2026 08:43:22
+   blob_storage  10/11/2026 08:56:44
+   Cache  10/09/2026 11:17:03
+   CachedConfigurations  10/04/2026 10:53:12
+   CachedData  10/04/2026 10:24:45
+   CachedExtensionVSIXs  10/11/2026 08:47:09
+   CachedProfilesData  10/04/2026 10:24:48
+   clp  10/04/2026 17:18:27
+   Code Cache  10/04/2026 10:24:45
+   CrashReport  10/04/2026 10:34:47
+   DawnGraphiteCache  10/04/2026 10:24:45
+   -- 最新日志目录: 20261011T085644
+   -- FILE main.log
+          at c._load (node:electron/js2c/node_init:2:17993)
+          at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+          at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+          at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:186:5)
+          at node:internal/main/run_main_module:36:49
+      
+      Node.js v22.20.0
+      
+      2026-10-11 08:57:13.144 [info] [SHUTDOWN] >>> will-quit: shutdown promise resolved, about to quit for real
+      2026-10-11 08:57:13.144 [info] [SHUTDOWN] >>> FINAL app.quit() called, main process is exiting!
+      2026-10-11 08:57:13.146 [info] [EH#0:default:1] Extension host with pid 36652 exited with code: 0, signal: unknown. (reason=terminated-by-request)
+      2026-10-11 08:57:13.146 [info] [EH#0:default:1] Unmapped window 1 (on exit)
+   -- FILE startup-breadcrumb.log
+      2026-10-11T00:56:44.913Z|7404|app-startup|version=1.106.1
+      2026-10-11T00:56:45.029Z|7404|gate-acquire|windowId=1 after=idle waitedMs=0
+      2026-10-11T00:56:45.033Z|7404|window-load|windowId=1 gated=true
+      2026-10-11T00:56:46.948Z|7404|eh-ready|windowId=1 affinity=0
+      2026-10-11T00:56:47.284Z|7404|eh-ready|windowId=1 affinity=1
+      2026-10-11T00:56:47.285Z|7404|gate-release|windowId=1 result=ready released=true waitedMs=2252
+      2026-10-11T00:57:07.139Z|7404|app-will-quit|
+      2026-10-11T00:57:13.144Z|7404|app-will-quit|
+   -- FILE renderer.log
+      2026-10-11 08:56:49.444 [info] [perf] Render performance baseline is 44ms
+      2026-10-11 08:56:49.569 [error] [Extension Host] (node:7124) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+      (Use `CodeBuddy CN --trace-deprecation ...` to show where the warning was created)
+      2026-10-11 08:56:49.594 [warning] Authentication provider CodeBuddy-auth was not declared in the Extension Manifest.
+      2026-10-11 08:56:49.594 [info] Authentication provider CodeBuddy-auth was registered.
+      2026-10-11 08:56:49.842 [info] [forceResolveWebviewView] Resolved composite 'workbench.view.extension.coding-copilot-chat' at location AuxiliaryBar
+      2026-10-11 08:56:49.910 [warning] [ConfigurationEditing] Allowed write of unregistered configuration key 'codingcopilot.customBlacklistCommands'; the codebuddy extension is likely still registering.
+      2026-10-11 08:56:49.946 [warning] [ConfigurationEditing] Allowed write of unregistered configuration key 'codingcopilot.disabledSecurityCategories'; the codebuddy extension is likely still registering.
+      2026-10-11 08:56:50.535 [info] setBackgroundThrottling:  false
+      2026-10-11 08:56:52.055 [info] setBackgroundThrottling:  true
+      2026-10-11 08:57:07.101 [info] [ChannelContribution] Unregistering window
+      2026-10-11 08:57:07.101 [info] [ChannelService] Unregistering window
+   -- FILE exthost1-codebuddy.log
+      2026-10-11 08:56:47.377 [info] [ExtHostLocalization] Getting bundle location for extension: Tencent-Cloud.coding-copilot
+      2026-10-11 08:56:47.377 [info] [ExtHostLocalization] Getting bundle location for Tencent-Cloud.coding-copilot, isBuiltin: true
+      2026-10-11 08:56:47.377 [info] [ExtHostLocalization] Using extension's own l10n for Tencent-Cloud.coding-copilot: file:///c%3A/Users/Administrator/AppData/Local/Programs/CodeBuddy%20CN/resources/app/extensions/genie/l10n/bundle.l10n.zh-cn.json
+      2026-10-11 08:56:47.378 [info] [ExtHostLocalization] Bundle location for Tencent-Cloud.coding-copilot: file:///c%3A/Users/Administrator/AppData/Local/Programs/CodeBuddy%20CN/resources/app/extensions/genie/l10n/bundle.l10n.zh-cn.json
+      2026-10-11 08:56:47.378 [info] [ExtHostLocalization] Fetching bundle contents for Tencent-Cloud.coding-copilot from file:///c%3A/Users/Administrator/AppData/Local/Programs/CodeBuddy%20CN/resources/app/extensions/genie/l10n/bundle.l10n.zh-cn.json
+      2026-10-11 08:56:47.394 [info] [ExtHostLocalization] Bundle content received for Tencent-Cloud.coding-copilot, parsing JSON
+      2026-10-11 08:56:47.394 [info] [ExtHostLocalization] Using simple format for Tencent-Cloud.coding-copilot
+      2026-10-11 08:56:47.394 [info] [ExtHostLocalization] Bundle parsed successfully for Tencent-Cloud.coding-copilot, keys count: 251
+      2026-10-11 08:56:47.394 [info] [ExtHostLocalization] Caching bundle for Tencent-Cloud.coding-copilot
+      2026-10-11 08:56:50.497 [info] Eager extensions activated
+      2026-10-11 08:57:07.071 [info] Extension host terminating: renderer closed the MessagePort
+      2026-10-11 08:57:07.076 [info] Extension host with pid 7124 exiting with code 0
+   -- FILE exthost.log
+      2026-10-11 08:56:50.506 [info] [ExtHostLocalization] Bundle location for vscode.typescript-language-features: file:///c%3A/Users/Administrator/AppData/Local/Programs/CodeBuddy%20CN/resources/app/extensions/vscode-language-pack-zh-hans/translations/extensions/vscode.typescript-language-features.i18n.json
+      2026-10-11 08:56:50.506 [info] [ExtHostLocalization] Fetching bundle contents for vscode.typescript-language-features from file:///c%3A/Users/Administrator/AppData/Local/Programs/CodeBuddy%20CN/resources/app/extensions/vscode-language-pack-zh-hans/translations/extensions/vscode.typescript-language-features.i18n.json
+      2026-10-11 08:56:50.559 [info] [ExtHostLocalization] Bundle content received for vscode.configuration-editing, parsing JSON
+      2026-10-11 08:56:50.559 [info] [ExtHostLocalization] Bundle parsed successfully for vscode.configuration-editing, keys count: 59
+      2026-10-11 08:56:50.559 [info] [ExtHostLocalization] Caching bundle for vscode.configuration-editing
+      2026-10-11 08:56:50.573 [info] [ExtHostLocalization] Bundle content received for vscode.json-language-features, parsing JSON
+      2026-10-11 08:56:50.574 [info] [ExtHostLocalization] Bundle parsed successfully for vscode.json-language-features, keys count: 151
+      2026-10-11 08:56:50.574 [info] [ExtHostLocalization] Caching bundle for vscode.json-language-features
+      2026-10-11 08:56:50.649 [info] [ExtHostLocalization] Bundle content received for vscode.typescript-language-features, parsing JSON
+      2026-10-11 08:56:50.650 [info] [ExtHostLocalization] Bundle parsed successfully for vscode.typescript-language-features, keys count: 129
+      2026-10-11 08:56:50.650 [info] [ExtHostLocalization] Caching bundle for vscode.typescript-language-features
+      2026-10-11 08:57:07.076 [info] Extension host terminating: renderer closed the MessagePort
+   -- FILE 腾讯云代码助手.log
+      2026-10-11 08:57:02.741 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=C:\mai\multi-ai-pipeline\ui\_scratch\_test_restart3.py, versionId=chatcmpl-tool-b6b1142a058a8c47
+      2026-10-11 08:57:02.741 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=c:/mai/multi-ai-pipeline/ui/_scratch/_test_restart2.py, versionId=chatcmpl-tool-9f189f0f2d974d42
+      2026-10-11 08:57:02.741 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=c:/mai/multi-ai-pipeline/ui/_scratch/_test_spawn.py, versionId=chatcmpl-tool-9f189f0f2d974d42
+      2026-10-11 08:57:02.741 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=c:/mai/multi-ai-pipeline/ui/_scratch/_test_trigger.py, versionId=chatcmpl-tool-9f189f0f2d974d42
+      2026-10-11 08:57:02.741 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=c:/mai/multi-ai-pipeline/ui/_scratch/_test_restart3.py, versionId=chatcmpl-tool-9f189f0f2d974d42
+      2026-10-11 08:57:02.741 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=C:\mai\multi-ai-pipeline\ui\_scratch\_test_restart.py, versionId=chatcmpl-tool-97e419d284e177b9
+      2026-10-11 08:57:02.741 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=c:/mai/multi-ai-pipeline/ui/_scratch/_test_restart.py, versionId=chatcmpl-tool-a26e3084ad7da6b6
+      2026-10-11 08:57:02.741 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=C:\mai\multi-ai-pipeline\ui\ui_main.py, versionId=chatcmpl-tool-8345c74982c148c9
+      2026-10-11 08:57:02.741 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=C:\mai\multi-ai-pipeline\ui\collab_exec.py, versionId=chatcmpl-tool-a30ace35b091ae5e
+      2026-10-11 08:57:02.742 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=C:\mai\multi-ai-pipeline\work\collab\VERIFY_2026-10-06.md, versionId=chatcmpl-tool-83bfb995ca3c7d10
+      2026-10-11 08:57:02.742 [warning] [initFileChanges] 无法找到文件版本或内容不可用，跳过跟踪: path=C:\mai\multi-ai-pipeline\ui\pipeline_runner.py, versionId=chatcmpl-tool-aae2cd19c97bafd3
+      2026-10-11 08:57:02.795 [info] 开始监控 353 个文件的变更
+== C:\Users\Administrator\AppData\Roaming\WorkBuddy  (最近修改 09/20/2026 21:18:21)

@@ -1,0 +1,15 @@
+=== apps.json 顶层键: ['_说明', 'browser', 'apps', 'selected', 'merge_app', 'rosterFile', 'programsOrder', 'stages', 'phases', 'voting', 'scoreboard', 'stageFinalGates', 'periodicRecheck', '_votingMeta', 'packagingStandard', 'platform', 'complianceMode', 'auditGates', 'auditDirections', '_auditMeta', 'sixAudit', 'writingEnvironment', 'sixElements', 'polishStandard', 'qcStandard', '_qcMeta']
+phases 类型 list 条数 37
+  [0] keys=['key', 'mode', 'stage', 'supp', 'desc'] name=None key=规划前约束
+      desc="字数/时间/平台/资源/风险五约；AI出模板与候选选项，人填真实约束"
+  [1] keys=['key', 'mode', 'stage', 'supp', 'desc'] name=None key=类型平台读者卖点
+      desc="人定类型/子类型/平台/读者画像；AI赛马出竞品/差异点/雷点候选"
+  [2] keys=['key', 'mode', 'stage', 'supp', 'cross_cutting', 'desc'] name=None key=文风与叙事基调
+      desc="叙事视角/语调/恢弘vs爽白/描写密度/去AI味基线；AI出文风选项，人定；全局文风基线，被方向二/五/六审核引用"
+  [3] keys=['key', 'mode', 'stage', 'supp', 'desc'] name=None key=一句话故事
+      desc="主角+身份+欲望+阻力+代价+独特设定→合成句；N写N-1盲审拼"
+=== blocks.json 类型 dict
+  顶层键样例: ['B1', 'B2', 'E', 'C', 'D', 'F', 'G', 'H']
+  子项码总数: 8
+  码样例: B1, B2, E, C, D, F, G, H
+  前缀分布: {'B1': 1, 'B2': 1, 'E': 1, 'C': 1, 'D': 1, 'F': 1, 'G': 1, 'H': 1}

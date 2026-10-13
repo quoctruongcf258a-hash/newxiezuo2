@@ -1,0 +1,1357 @@
+# orchestrator.py — 多 AI 协作写作流水线 · 四程序编排总控
+#
+# 跑在你的 Windows PC 上。它把「今天打开的那几个 AI」组织起来，按四个程序干活：
+#
+#   程序一 · 规划（23 环）  → 产出：章纲（含上架包装）   出口闸：章纲终审
+#   程序二 · 写作（每章 4 环）→ 产出：正文             出口闸：正文终审
+#   程序三 · 润色（1 环 28 项）→ 产出：润色定稿          出口闸：润色终审
+#   程序四 · 质检（9 环）   → 产出：入库定稿 + 质检报告  出口闸：成书检验
+#
+# 每个「块」都走同一条链：多人产出 → 其余人盲审 → 指定拼接者段落级择优 → 环节候选稿
+# 每个程序出口都投一次票：过半通过 / 未过半打回 / 平票交叉提意见再投（上限 2 轮）
+#
+# ── 用法 ────────────────────────────────────────────────────────
+#   python session.py show                      # 先看名单、登记今天开了哪些 AI
+#   python orchestrator.py --check-session       # 校验今日阵容（人数/拼接者/跨厂）
+#   python orchestrator.py --probe               # 逐个探测今日 AI 是否可用
+#   python orchestrator.py --program 规划 --dry-run
+#   python orchestrator.py --program 规划
+#   python orchestrator.py --program 写作 --chapter 0057
+#   python orchestrator.py --program 写作 --chapter 0057 --phase 正文   # 只跑某一环
+#   python orchestrator.py --program 润色 --chapter 0057
+#   python orchestrator.py --program 质检 --chapter 0057
+#
+#   --dry-run  只打印将派发的任务，不真驱动（强烈建议先跑一次）
+#   --loop N   单个出口闸的最大回改轮数（默认 2）
+#   --once     每个环节只让 1 名 AI 产出（省额度试跑用；正式跑别加）
+
+import argparse
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+
+
+# _UTF8_STDOUT_FIX：强制 stdout/stderr 用 UTF-8，避免 GBK 编码崩溃
+try:
+    import sys as _sys
+    if hasattr(_sys.stdout, "reconfigure"):
+        _sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(_sys.stderr, "reconfigure"):
+        _sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+BASE = HERE.parent
+PROMPTS = BASE / "prompts"
+WORK = BASE / "work"
+APPS_JSON = HERE / "apps.json"
+RINGS_JSON = HERE.parent.parent / "rules" / "rings_items.json"
+
+
+# _PROJECT_ROOT：读当前项目名，算产物根目录
+PROJECT_FILE = HERE.parent.parent / "work" / "collab" / "current_project.json"
+OUTPUT_DIR = HERE.parent.parent / "output"
+
+
+def _load_current_project():
+    """从 work/collab/current_project.json 读项目名。"""
+    if PROJECT_FILE.exists():
+        try:
+            import json as _json
+            _d = _json.loads(PROJECT_FILE.read_text(encoding="utf-8"))
+            _p = _d.get("project") or ""
+            if _p:
+                return _p
+        except Exception:
+            pass
+    return ""
+
+
+def _project_root():
+    """返回 output/<项目名>/；无项目名时回退 windows-use/work/。"""
+    _p = _load_current_project()
+    if _p:
+        return OUTPUT_DIR / _p
+    return HERE.parent / "work"
+
+
+# 阶段名映射：程序名 → output 下的子目录
+_STAGE_DIR_MAP = {
+    "规划": "01_规划",
+    "写作": "02_写作",
+    "润色": "03_去AI",
+    "质检": "04_审核",
+}
+
+
+# _roles_from_stage_board：读 UI 的 stage_board.json 拿角色指派
+STAGE_BOARD_PATHS = [
+    HERE.parent.parent / "work" / "collab" / "stage_board.json",
+    HERE.parent / "work" / "collab" / "stage_board.json",
+]
+
+
+def load_stage_assignments():
+    for _p in STAGE_BOARD_PATHS:
+        if _p.exists():
+            try:
+                _d = json.loads(_p.read_text(encoding="utf-8"))
+                return _d.get("assignments", {}) or {}
+            except Exception:
+                pass
+    return {}
+
+
+def _name_to_key(name, participants):
+    if not name:
+        return None
+    for _p in participants:
+        if _p.get("label") == name or _p.get("key") == name:
+            return _p["key"]
+    return (name or "").lower().replace(" ", "_")
+
+
+def _names_to_parts(names, participants):
+    if isinstance(names, str):
+        names = [names] if names else []
+    out, seen = [], set()
+    for _n in (names or []):
+        _k = _name_to_key(_n, participants)
+        if not _k or _k in seen:
+            continue
+        for _p in participants:
+            if _p["key"] == _k:
+                out.append(_p)
+                seen.add(_k)
+                break
+    return out
+
+
+# 程序名 → rings_items.json 里的阶段键
+STAGE_MAP = {
+    "规划": "01_规划",
+    "写作": "02_写作",
+    "润色": "03_去AI",
+    "质检": "04_审核",
+}
+
+
+def _load_phases(cfg, program):
+    """优先从 rings_items.json 读该程序的环节清单；读不到则回退 cfg["phases"]。"""
+    if RINGS_JSON.exists():
+        try:
+            rings = json.loads(RINGS_JSON.read_text(encoding="utf-8"))
+        except Exception:
+            rings = None
+        if rings:
+            stage_key = STAGE_MAP.get(program)
+            if stage_key and stage_key in rings:
+                items = rings[stage_key].get("环节", [])
+                out = []
+                for item in items:
+                    out.append({
+                        "key": item.get("name") or item.get("code"),
+                        "code": item.get("code"),
+                        "mode": item.get("type") or "mesh",
+                        "stage": program,
+                        "supp": False,
+                        "desc": item.get("desc", ""),
+                    })
+                if out:
+                    print(f"[rings] 读入 {RINGS_JSON.name} 的 {stage_key}：{len(out)} 环")
+                    return out
+    return [p for p in cfg["phases"] if p["stage"] == program]
+
+
+sys.path.insert(0, str(HERE))
+import session as session_mod      # noqa: E402
+import tasks as tasks_mod          # noqa: E402
+import voting as voting_mod        # noqa: E402
+import scoreboard as board_mod     # noqa: E402  赛马记分榜
+
+# 四大程序 → 出口闸名（与 apps.json 的 stageFinalGates 对应）
+PROGRAM_GATES = {
+    "规划": "章纲终审",
+    "写作": "正文终审",
+    "润色": "润色终审",
+    "质检": "成书检验",
+}
+# 质检不合格时的回退去向
+REWORK_TARGET = {
+    "表达": "润色", "文风": "润色", "AI味": "润色",
+    "内容": "写作", "结构": "写作", "章纲": "写作",
+    "设定": "规划", "世界观": "规划", "力量体系": "规划",
+}
+
+
+# ════════════════════════════════ 基础 ════════════════════════════════
+
+def load_cfg() -> dict:
+    with open(APPS_JSON, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def read_text(p) -> str:
+    p = Path(p)
+    return p.read_text(encoding="utf-8", errors="ignore") if p.exists() else ""
+
+
+def write_text(p, s):
+    p = Path(p)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(s, encoding="utf-8")
+
+
+def load_prompt(name: str) -> str:
+    return read_text(PROMPTS / name)
+
+
+# 需要带「写作硬指标」的程序（规划程序不必带，省 token）
+HARD_RULE_PROGRAMS = ("写作", "润色", "质检")
+
+
+def compose_prompt(base_name: str, program: str) -> str:
+    """基础 prompt + 按程序附带的固定件（硬指标）。"""
+    p = load_prompt(base_name)
+    if program in HARD_RULE_PROGRAMS:
+        hr = load_prompt("PROMPT_HARD_RULES.md")
+        if hr.strip():
+            p = p.rstrip() + "\n\n---\n\n" + hr
+    return p
+
+
+def format_note(program, phase_cfg) -> str:
+    """为产出环节指定输出格式（写进 prompt 的【输出格式要求】）。"""
+    key = phase_cfg.get("key", "")
+    if program == "规划":
+        return "输出结构化条目（`字段名：内容`），像一份可直接归档的设定表或清单。"
+    if program == "写作":
+        if key == "章前对齐卡":
+            return ("输出一张对齐卡，字段固定：视角 / 视角人物 / 视角限制 / 本章释放信息 / "
+                    "本章隐藏信息 / 本章误导信息 / 本章伏笔信息 / 场景进出方式 / 章首方式 / "
+                    "章末钩子类型 / 平台红线 / 本块目标。")
+        if key == "分布":
+            return ("输出分镜式条目，每条一行：`段序 | 目标字数 | 发生了什么 | 关键词 | "
+                    "六要素归属 | 自检红线`。")
+        if key == "正文":
+            return "输出连贯的正文段落，不带任何标注、不加小节标题、不写解释与总结。"
+        if key == "章内节奏自检":
+            return ("输出自检表，字段：断点位置 / 四条红线是否命中 / 章末钩强度（1—10）/ "
+                    "留白比例 / 待改条目（含定位卡四件套）。")
+    if program == "润色":
+        return "输出润色后的**完整文本**，不要输出修改说明、不要输出对照表。"
+    if program == "质检":
+        return ("输出问题清单，每条含：位置 / 命中条目 / 正文关键句 / 修改建议 / 严重度（S/A/B/C）。"
+                "若是质检汇总或成书检验环节，改为输出 JSON。")
+    return ""
+
+
+def get_agent():
+    """初始化 Windows-Use 代理（延迟导入，dry-run 不需要）。"""
+    provider = os.getenv("WINDOWS_USE_PROVIDER", "ollama").lower()
+    try:
+        from windows_use.providers.ollama import ChatOllama as OllamaP
+        from windows_use.providers.google import ChatGoogle as GoogleP
+        from windows_use.providers.openai import ChatOpenAI as OpenAIP
+        from windows_use.providers.deepseek import ChatDeepSeek as DeepSeekP
+        from windows_use import Agent, Browser
+    except Exception:
+        from windows_use.llms.ollama import ChatOllama as OllamaP
+        from windows_use.llms.google import ChatGoogle as GoogleP
+        from windows_use.llms.openai import ChatOpenAI as OpenAIP
+        from windows_use.llms.deepseek import ChatDeepSeek as DeepSeekP
+        from windows_use.agent import Agent, Browser
+
+    if provider == "gemini":
+        from dotenv import load_dotenv
+        load_dotenv()
+        llm = GoogleP(model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+                      api_key=os.getenv("GOOGLE_API_KEY"))
+    elif provider == "openai":
+        from dotenv import load_dotenv
+        load_dotenv()
+        llm = OpenAIP(model=os.getenv("OPENAI_MODEL", "gpt-4o"))
+    elif provider == "deepseek":
+        from dotenv import load_dotenv
+        load_dotenv()
+        llm = DeepSeekP(model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"))
+    else:
+        llm = OllamaP(model=os.getenv("OLLAMA_MODEL", "qwen2.5:14b"))
+
+    browser = getattr(Browser, os.getenv("WINDOWS_USE_BROWSER", "EDGE").upper(), Browser.EDGE)
+    return Agent(llm=llm, browser=browser, use_vision=False)
+
+
+def _extract_prompt(task_text):
+    """从 SOP 里抠出『指令开始...指令结束』之间的正文。"""
+    i = task_text.find("===== 指令开始 =====")
+    j = task_text.find("===== 指令结束 =====")
+    if i >= 0 and j > i:
+        return task_text[i + len("===== 指令开始 ====="):j].strip()
+    return task_text
+
+
+def run_task(agent, task_text, dry=False, title="", app=None):
+    """_CDP_FIRST：优先走 CDP（app 有 cdpPort），失败/无端口才回退 windows_use。"""
+    print("\n" + "─" * 74)
+    if title:
+        print(f"[{title}]")
+    print(task_text)
+    print("─" * 74)
+    if dry:
+        print("[dry-run] 未实际驱动。")
+        return True
+
+    # ── CDP 分支 ──
+    cdp_port = (app or {}).get("cdpPort")
+    if cdp_port:
+        try:
+            import sys as _sys
+            _wu = HERE.parent
+            if str(_wu) not in _sys.path:
+                _sys.path.insert(0, str(_wu))
+            from mix_send import send as _cdp_send
+            prompt = _extract_prompt(task_text)
+            label = (app or {}).get("label") or (app or {}).get("key") or ""
+            print(f"[CDP] 发送到 {label}（端口 {cdp_port}），prompt {len(prompt)} 字")
+            r = _cdp_send(label, prompt)
+            print(f"[CDP] 返回：{r}")
+            return True
+        except Exception as e:                 # noqa: BLE001
+            print(f"[CDP 失败] {e}，回退 windows_use")
+
+    # ── windows_use 分支 ──
+    if agent is None:
+        print("[错误] agent=None 且该 AI 无 cdpPort，无法执行")
+        return False
+    try:
+        agent.invoke(task=task_text)
+        return True
+    except Exception as e:                     # noqa: BLE001
+        print(f"[错误] Windows-Use 执行失败：{e}")
+        return False
+
+
+def wait_file(p, timeout=180):
+    p = Path(p)
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        if p.exists() and p.stat().st_size > 0:
+            return True
+        time.sleep(5)
+    return p.exists() and p.stat().st_size > 0
+
+
+# ════════════════════════════ 审核标准提取 ════════════════════════════
+
+def _fmt_lines(items, bullet="  · ") -> str:
+    return "\n".join(f"{bullet}{x}" for x in items)
+
+
+def _item_line(it, indent="  - ") -> str:
+    """兼容渲染：标准条目可能是纯字符串，也可能是 {n,name/key,check} 对象。"""
+    if isinstance(it, str):
+        return f"{indent}{it}"
+    if isinstance(it, dict):
+        no = it.get("n") or ""
+        name = it.get("name") or it.get("key") or ""
+        check = it.get("check") or it.get("desc") or ""
+        head = f"{indent}{no} {name}".rstrip()
+        return f"{head}：{check}" if check else head
+    return f"{indent}{it}"
+
+
+def _polish_no(section: dict) -> str:
+    """润色节编号：有 n 用 n，否则从 key（如「一、润色前准备」）里取前缀。"""
+    if section.get("n"):
+        return str(section["n"])
+    k = str(section.get("key", ""))
+    return k.split("、")[0] if "、" in k else k
+
+
+def platform_block(cfg) -> str:
+    """番茄平台硬约束，注入每一次产出与盲审。"""
+    p = cfg.get("platform") or {}
+    if not p:
+        return ""
+    cs = p.get("chapterSpec") or {}
+    parts = ["【平台硬约束（番茄）——任何产出都不得违反】"]
+    for k in ("开篇", "单章字数", "钩子密度", "视角", "称谓"):
+        if cs.get(k):
+            parts.append(f"  · {k}：{cs[k]}")
+    if p.get("metrics", {}).get("核心指标"):
+        parts.append(f"  · 核心指标：{'、'.join(p['metrics']['核心指标'])}")
+    # _NO_AI_POLICY：AI 政策行已去掉（用户要求）
+    return "\n".join(parts)
+
+
+def plan_direction_standard(cfg, phase_key: str) -> str:
+    """给规划某个环节，找出它归属的八方向，返回该方向的审核标准。"""
+    dirs = cfg.get("auditDirections") or []
+    hit = None
+    for d in dirs:
+        rings = list(d.get("rings") or []) + list(d.get("extends") or [])
+        if phase_key in rings:
+            hit = d
+            break
+    if not hit:
+        # 兜底：把全部方向标准都给（用于收口环节）
+        return "\n\n".join(_dir_text(d) for d in dirs)
+    return _dir_text(hit)
+
+
+def _dir_text(d: dict) -> str:
+    s = [f"方向：{d.get('key', '')}"]
+    if d.get("questions"):
+        s.append("要回答：" + " / ".join(d["questions"]))
+    if d.get("standards"):
+        s.append("审核标准（逐条打勾）：")
+        s.append(_fmt_lines(d["standards"], "  □ "))
+    if d.get("failPatterns"):
+        s.append("不合格表现（命中即判不通过）：")
+        s.append(_fmt_lines(d["failPatterns"], "  ✗ "))
+    return "\n".join(s)
+
+
+def six_standard(cfg, element_key=None) -> str:
+    """六要素审核标准（写作程序）。element_key 给了就只给该要素。"""
+    se = cfg.get("sixElements") or {}
+    els = se.get("elements") or []
+    out = ["【写作审核框架：六要素（始・显・通・动・成・终）】"]
+    for e in els:
+        if element_key and e.get("key") != element_key:
+            continue
+        out.append(f"\n■ {e.get('key')}（{e.get('name', '')}）")
+        if e.get("action"):
+            out.append(f"  创作动作：{e['action']}")
+        if e.get("keywords"):
+            out.append(f"  关键词：{'・'.join(e['keywords'])}")
+        if e.get("standards"):
+            out.append("  审核要点：")
+            out.append(_fmt_lines(e["standards"], "    □ "))
+        if e.get("failPatterns"):
+            out.append("  不合格表现：")
+            out.append(_fmt_lines(e["failPatterns"], "    ✗ "))
+    if se.get("redLines"):
+        out.append("\n【四条红线（命中即不通过）】")
+        for r in se["redLines"]:
+            out.append(f"  ✗ {r.get('key')}：{r.get('rule', '')}")
+    return "\n".join(out)
+
+
+def polish_standard(cfg, section_nos=None) -> str:
+    """润色标准（程序三）。section_nos 给了就只取那几节。"""
+    ps = cfg.get("polishStandard") or {}
+    out = []
+    for s in ps.get("sections", []):
+        if section_nos and _polish_no(s) not in section_nos:
+            continue
+        out.append(f"■ {s.get('key', '')}")
+        if s.get("note"):
+            out.append(f"  （{s['note']}）")
+        for it in s.get("items", []):
+            out.append(_item_line(it))
+            if isinstance(it, dict):
+                for sub in (it.get("subs") or []):
+                    out.append(f"      · {sub}")
+    if not section_nos:
+        acc = ps.get("acceptance") or {}
+        for k, v in acc.items():
+            out.append(f"\n【验收清单·{k}】")
+            out.append(_fmt_lines(v, "  □ "))
+        if ps.get("pitfalls"):
+            out.append("\n【常见坑】")
+            out.append(_fmt_lines(ps["pitfalls"], "  ⚠ "))
+    return "\n".join(out)
+
+
+def qc_standard(cfg, section_nos=None) -> str:
+    """质检标准（程序四）。section_nos 给了就只取那几节。"""
+    q = cfg.get("qcStandard") or {}
+    out = []
+    for s in q.get("sections", []):
+        if section_nos and str(s.get("n")) not in [str(x) for x in section_nos]:
+            continue
+        out.append(f"■ {s.get('n', '')} {s.get('key', '')}")
+        for it in s.get("items", []):
+            out.append(_item_line(it))
+    if q.get("severity") and not section_nos:
+        out.append("\n【严重程度分级】")
+        for k, v in q["severity"].items():
+            out.append(f"  {k}：{v}")
+    return "\n".join(out)
+
+
+def env_block(cfg, craft_str) -> str:
+    """写作程序专用：把 writingEnvironment 里对应类别的技法条注入 prompt。
+
+    craft_str 例："落笔技术类(7-13)" → 取 "落笔技术类"。
+    「写作模式类」无论哪个环节都注入（每章选一种写法）。
+    """
+    we = cfg.get("writingEnvironment") or {}
+    cats = we.get("categories") or []
+    if not cats:
+        return ""
+    cat_name = str(craft_str or "").split("(")[0].strip()
+    out = ["【本环节适用的写作技法（逐条落实，坑要主动规避）】"]
+    for c in cats:
+        if c["key"] != cat_name and c["key"] != "写作模式类":
+            continue
+        out.append(f"\n■ {c['key']}")
+        for it in c.get("items", []):
+            line = f"  {it.get('n', '')}. {it['key']}：{it.get('check', '')}"
+            out.append(line)
+            for k in ("坑", "原则", "适合"):
+                if it.get(k):
+                    out.append(f"       {k}：{it[k]}")
+    return "\n".join(out)
+
+
+# ════════════════════════════ 块切分 ════════════════════════════
+
+def chunks_for_phase(cfg, program, phase_cfg) -> list:
+    """把一个环节切成若干「块」。返回 [(chunk_id, chunk_label, standard_block), ...]
+
+    规划：环节即块（desc 作为说明）
+    写作：分布/正文 按六要素切 6 块；其余环节单块
+    润色：按 4 节切
+    质检：按 qcSecs 每节一块
+    """
+    key = phase_cfg["key"]
+    if program == "写作" and phase_cfg.get("six"):
+        els = (cfg.get("sixElements") or {}).get("elements") or []
+        return [(e["key"], f"六要素·{e['key']}", six_standard(cfg, e["key"])) for e in els]
+    if program == "润色":
+        secs = (cfg.get("polishStandard") or {}).get("sections") or []
+        return [(_polish_no(s), s.get("key", ""), polish_standard(cfg, [_polish_no(s)]))
+                for s in secs]
+    if program == "质检" and phase_cfg.get("qcSecs"):
+        out = []
+        for n in phase_cfg["qcSecs"]:
+            out.append((str(n), f"{n}", qc_standard(cfg, [n])))
+        return out
+    if program == "规划":
+        return [(key, key, plan_direction_standard(cfg, key))]
+    return [(key, key, "")]
+
+
+# ════════════════════════════ 网格三件套 ════════════════════════════
+
+def do_produce(agent, sess, app, program, phase_cfg, chunk_id, chunk_label,
+               input_text, out_dir, dry, extra_note="", ai_assist=False):
+    """① 产出：一名 AI 产出一版。"""
+    out = Path(out_dir) / "versions" / f"{chunk_id}__{app['key']}.md"
+    label = f"{program} › {phase_cfg['key']}"
+    tpl = compose_prompt("PROMPT_PRODUCE.md", program)
+    note = format_note(program, phase_cfg)
+    if extra_note:
+        note = (note + "\n\n【上一轮终审反对意见（必须逐条对应处理）】\n" + extra_note).strip()
+    if ai_assist:
+        task = tasks_mod.build_scaffold_task(app, tpl, input_text, str(out), label)
+    else:
+        task = tasks_mod.build_produce_task(app, tpl, input_text, str(out), label,
+                                            chunk_label, note)
+    ok = run_task(agent, task, dry, title=f"产出 | {app['label']} | {label} | {chunk_label}", app=app)
+    if ok and not dry:
+        wait_file(out)
+    return out
+
+
+def do_review(agent, sess, app, program, phase_cfg, chunk_id, chunk_label,
+              target_path, out_dir, dry, std=None):
+    """② 盲审：其余 AI 隔离评审某一版，输出 JSON。
+
+    std 为该块的审核标准（由 chunks_for_phase 给出）；未给则按程序回退取全集。
+    """
+    tgt = read_text(target_path)
+    if not tgt.strip():
+        return None
+    out = Path(out_dir) / "reviews" / f"{chunk_id}__{Path(target_path).stem}__{app['key']}.json"
+    label = f"{program} › {phase_cfg['key']}"
+    if std is None:
+        if program == "规划":
+            std = plan_direction_standard(agent_cfg, phase_cfg["key"])
+        elif program == "写作":
+            std = six_standard(agent_cfg, None)
+        elif program == "润色":
+            std = polish_standard(agent_cfg, None)
+        elif program == "质检":
+            std = qc_standard(agent_cfg, phase_cfg.get("qcSecs"))
+    task = tasks_mod.build_review_task(app, compose_prompt("PROMPT_REVIEW.md", program), tgt,
+                                       str(out), label, std, chunk_label)
+    ok = run_task(agent, task, dry, title=f"盲审 | {app['label']} | {label} | {chunk_label}", app=app)
+    if ok and not dry:
+        wait_file(out)
+    return out
+
+
+def do_merge(agent, sess, app, program, phase_cfg, chunk_id, chunk_label,
+             version_paths, review_paths, out_dir, dry, extra_issues=""):
+    """③ 拼接：指定拼接者按段落级择优拼出候选稿。"""
+    label = f"{program} › {phase_cfg['key']}"
+    vtext = []
+    for i, p in enumerate(version_paths, 1):
+        t = read_text(p)
+        if t.strip():
+            vtext.append(f"── 版本{i}（产出者：{Path(p).stem.split('__')[-1]}）──\n{t}")
+    rtext = []
+    for p in review_paths:
+        if not p:
+            continue
+        t = read_text(p)
+        if t.strip():
+            rtext.append(f"── 评审（{Path(p).stem}）──\n{t}")
+    if extra_issues:
+        rtext.append("── 上一轮终审反对意见（本轮必须逐条处理）──\n" + extra_issues)
+    out = Path(out_dir) / "merged" / f"{chunk_id}.md"
+    task = tasks_mod.build_merge_task(app, compose_prompt("PROMPT_MERGE.md", program),
+                                      "\n\n".join(vtext), "\n\n".join(rtext),
+                                      str(out), label, chunk_label)
+    ok = run_task(agent, task, dry, title=f"拼接 | {app['label']} | {label} | {chunk_label}", app=app)
+    if ok and not dry:
+        wait_file(out)
+    return out
+
+
+agent_cfg = {}   # 由 main 注入（供 do_review 取标准）
+
+
+# ════════════════════════════ 环节 / 程序 ════════════════════════════
+
+# _UPSTREAM_PATHS：列出本环之前已产出的文件路径
+def keywords_for_phase(cfg, program, phase_cfg):
+    """从 apps.json 提取本环节关键词，返回 dict。"""
+    out = {"内容词": [], "动作词": [], "禁止词": [], "验收词": [], "红线": []}
+    key = phase_cfg.get("key") or phase_cfg.get("name") or ""
+
+    if program == "规划":
+        for d in cfg.get("auditDirections") or []:
+            rings = list(d.get("rings") or []) + list(d.get("extends") or [])
+            if key in rings:
+                out["验收词"] += list(d.get("standards") or [])
+                out["禁止词"] += list(d.get("failPatterns") or [])
+                break
+
+    if program == "写作":
+        seg = phase_cfg.get("six_segment") or ""
+        for e in (cfg.get("sixElements") or {}).get("elements") or []:
+            if e.get("key") == seg:
+                kws = e.get("keywords") or ""
+                out["内容词"] += [x for x in kws.split("・") if x]
+                out["验收词"] += list(e.get("standards") or [])
+                out["禁止词"] += list(e.get("failPatterns") or [])
+        for r in (cfg.get("sixElements") or {}).get("redLines") or []:
+            out["红线"].append(f"{r.get('key')}：{r.get('rule')}")
+        craft = phase_cfg.get("craft") or ""
+        cat = craft.split("(")[0].strip()
+        for c in (cfg.get("writingEnvironment") or {}).get("categories") or []:
+            if c.get("key") == cat:
+                for it in c.get("items") or []:
+                    out["动作词"].append(f"{it.get('key')}：{it.get('check')}")
+                    if it.get("坑"):
+                        out["禁止词"].append(it["坑"])
+                break
+
+    if program == "润色":
+        for s in (cfg.get("polishStandard") or {}).get("sections") or []:
+            for it in s.get("items") or []:
+                out["动作词"].append(f"{it.get('name')}：{it.get('check')}")
+        out["禁止词"] += list((cfg.get("polishStandard") or {}).get("pitfalls") or [])
+
+    if program == "质检":
+        for n in phase_cfg.get("qcSecs") or []:
+            for s in (cfg.get("qcStandard") or {}).get("sections") or []:
+                if str(s.get("n")) == str(n):
+                    out["内容词"] += list(s.get("items") or [])
+
+    return out
+
+
+def _upstream_files(program, phase_cfg, chapter=None):
+    """返回本环应读取的上游文件路径列表。"""
+    _root = _project_root()
+    _stage = _STAGE_DIR_MAP.get(program, program)
+    _stage_dir = _root / _stage
+    ups = []
+
+    # 首个程序（规划）读 00_初始化 的项目信息 + 7 份规划蓝图
+    if program == "规划":
+        _init_dir = _root / "00_初始化"
+        _info = _init_dir / "项目信息.json"
+        if _info.exists():
+            ups.append(str(_info))
+        # 7 份规划蓝图（UI 环节0.5 生成）：1.0_总纲 ~ 1.6_卷纲
+        for _bp in ("1.0_总纲.md", "1.1_定位与卖点.md", "1.2_故事核心主题.md",
+                    "1.3_人物系统.md", "1.4_世界观与设定.md",
+                    "1.5_结构与节奏.md", "1.6_卷纲.md"):
+            _fp = _init_dir / _bp
+            if _fp.exists():
+                ups.append(str(_fp))
+
+    # 读前面环的 phase_candidate.md（按 rings_items.json 顺序）
+    try:
+        import json as _json
+        if RINGS_JSON.exists():
+            _rings = _json.loads(RINGS_JSON.read_text(encoding="utf-8"))
+            _stage_key = {"规划": "01_规划", "写作": "02_写作",
+                          "润色": "03_去AI", "质检": "04_审核"}.get(program, "")
+            _items = _rings.get(_stage_key, {}).get("环节", [])
+            _order = [x.get("name") or x.get("code") for x in _items]
+            _cur = phase_cfg.get("key") or phase_cfg.get("name")
+            if _cur in _order:
+                _idx = _order.index(_cur)
+                for _prev in _order[:_idx]:
+                    fp = _stage_dir / _prev / "phase_candidate.md"
+                    if fp.exists():
+                        ups.append(str(fp))
+    except Exception:
+        pass
+
+    # 章循环：读上一章产物
+    if chapter and program in ("写作", "润色", "质检"):
+        try:
+            _prev_ch = str(int(chapter) - 1).zfill(4)
+            _prev_dir = _root / "02_写作" / f"ch{_prev_ch}"
+            if _prev_dir.exists():
+                for _fp in _prev_dir.rglob("phase_candidate.md"):
+                    ups.append(str(_fp))
+        except Exception:
+            pass
+
+    return ups
+
+
+def phase_dir(program, chapter, phase_key):
+    """_PROJECT_ROOT：产物写到 output/<项目名>/<阶段目录>/<环名>/"""
+    _stage = _STAGE_DIR_MAP.get(program, program)
+    d = _project_root() / _stage
+    if chapter:
+        d = d / f"ch{chapter}"
+    return d / phase_key
+
+
+def run_mesh_phase(agent, cfg, sess, program, phase_cfg, chapter, input_text, dry,
+                   once=False, extra_issues="", custom_chunks=None):
+    """跑一个环节：逐块 产出→盲审→拼接，拼成环节候选稿。返回候选稿路径。
+
+    custom_chunks 给了就用它（每项 (chunk_id, chunk_label, standard_block)），
+    用于周期性复检这类「不属于标准环节」的特殊跑法。
+    """
+    parts = sess["participants"]
+    merger = sess["merge_app"]
+
+    # _roles_from_stage_board：读 UI 指派
+    _assign = load_stage_assignments()
+    _stage_a = _assign.get(program, {}).get("steps", {})
+    _this_a = _stage_a.get(phase_cfg["key"], {}) or {}
+
+    _exec_names = (_this_a.get("blocks", {}) or {}).get("产出") or []
+    _rev_names = _this_a.get("reviewer") or []
+    _adj_name = _this_a.get("adjuster") or ""
+
+    phase_writers = _names_to_parts(_exec_names, parts) or parts
+    phase_reviewers = _names_to_parts(_rev_names, parts) or parts
+    phase_merger = None
+    if _adj_name:
+        _adj_key = _name_to_key(_adj_name, parts)
+        for _p in parts:
+            if _p["key"] == _adj_key:
+                phase_merger = _p
+                break
+    if not phase_merger:
+        phase_merger = merger
+
+    print(f"  [角色] 执行={[p['label'] for p in phase_writers]} "
+          f"审核={[p['label'] for p in phase_reviewers]} "
+          f"调整={phase_merger['label']}")
+
+    out_dir = phase_dir(program, chapter, phase_cfg["key"])
+    chunks = custom_chunks or chunks_for_phase(cfg, program, phase_cfg)
+
+    print(f"\n{'=' * 74}")
+    mode = ((cfg.get("complianceMode") or {}).get("default") or "aiDirect")
+    assist = (mode == "aiAssist")
+    print(f"【{program} › {phase_cfg['key']}】参战 {len(parts)} 人，"
+          f"拼接者 {merger['label']}，共 {len(chunks)} 块"
+          + (f"｜合规模式：{mode}" + ("（AI 出蓝图，作者手写正文）" if assist else "（AI 直出正文）")
+             if program == "写作" else ""))
+    print(f"{'=' * 74}")
+
+    for cid, clabel, _std in chunks:
+        writers = phase_writers[:1] if once else phase_writers
+        versions = []
+        for w in writers:
+            v = do_produce(agent, sess, w, program, phase_cfg, cid, clabel,
+                           input_text, out_dir, dry, extra_note=extra_issues,
+                           ai_assist=assist)
+            if dry or (v.exists() and v.stat().st_size > 0):
+                versions.append(v)
+        if dry and not versions:
+            versions = [Path(out_dir) / "versions" / f"{cid}__{w['key']}.md" for w in writers]
+
+        reviews = []
+        for v in versions:
+            writer_key = v.stem.split("__")[-1]
+            for r in phase_reviewers:
+                if r["key"] == writer_key:
+                    continue                       # 不审自己写的
+                rv = do_review(agent, sess, r, program, phase_cfg, cid, clabel,
+                               v, out_dir, dry, std=_std)
+                if rv:
+                    reviews.append(rv)
+
+        if len(versions) >= 2:
+            do_merge(agent, sess, phase_merger, program, phase_cfg, cid, clabel,
+                     versions, reviews, out_dir, dry)
+        else:
+            # 只有一版时无需拼接，直接作为该块结果
+            src = versions[0] if versions else None
+            dst = Path(out_dir) / "merged" / f"{cid}.md"
+            if src and not dry:
+                write_text(dst, read_text(src))
+            elif dry:
+                print(f"[dry-run] 该块仅 1 版，跳过拼接，直接采用 {dst.name}")
+
+    # 环节候选稿：按块顺序串起来
+    cand = Path(out_dir) / "phase_candidate.md"
+    pieces = []
+    for cid, clabel, _std in chunks:
+        t = read_text(Path(out_dir) / "merged" / f"{cid}.md")
+        if t.strip():
+            pieces.append(f"<!-- 块：{clabel} -->\n{t.strip()}")
+    body = "\n\n".join(pieces)
+    if dry:
+        print(f"[dry-run] 环节候选稿将写入 {cand}（{len(pieces)}/{len(chunks)} 块有内容）")
+    else:
+        write_text(cand, body)
+
+    # 赛马记分榜：登记参与 + 解析拼接者的采纳标记
+    if not dry:
+        for w in {v.stem.split("__")[-1] for v in versions}:
+            board_mod.note_participation(program, phase_cfg["key"], w)
+        pairs = []
+        for cid, _cl, _s in chunks:
+            mt = read_text(Path(out_dir) / "merged" / f"{cid}.md")
+            for ck, wk in board_mod.parse_adopt_markers(mt):
+                pairs.append((ck or cid, wk))
+        if pairs:
+            board_mod.record_adoptions(program, chapter, phase_cfg["key"], pairs)
+            print(f"📊 记分榜：本环节采纳 → "
+                  + "、".join(f"{wk}×{sum(1 for _, w2 in pairs if w2 == wk)}"
+                              for wk in {w2 for _, w2 in pairs}))
+    return cand
+
+
+def run_gate(agent, cfg, sess, program, candidate_path, chapter, dry, max_loop=2):
+    """程序出口闸：全员投票 → 过半通过 / 未过半打回 / 平票交叉改稿再投。"""
+    gate = PROGRAM_GATES[program]
+    merger = sess["merge_app"]
+    parts = sess["participants"]
+    out_dir = (WORK / program / (f"ch{chapter}" if chapter else "")) / "_gate"
+    std = _gate_standard(cfg, program)
+
+    last_issues = ""
+    for rnd in range(1, max_loop + 1):
+        if dry:
+            print(f"[dry-run] {gate}：将对 {candidate_path} 收 {len(parts)} 张终审票"
+                  f"（第 {rnd}/{max_loop} 轮，回改上限）")
+            return {"verdict": "dry", "issues": [], "notes": []}
+
+        cand_text = read_text(candidate_path)
+        if not cand_text.strip():
+            print(f"[警告] {gate}：候选稿为空，无法投票。")
+            return {"verdict": "insufficient", "issues": [], "notes": ["候选稿为空"]}
+
+        vdir = out_dir / f"round{rnd}"
+        votes = []
+        roster_hint = "、".join(f"{p['key']}（{p['label']}）" for p in parts)
+        for p in parts:
+            out = vdir / f"vote__{p['key']}.json"
+            task = tasks_mod.build_vote_task(p, compose_prompt("PROMPT_VOTE.md", program), cand_text,
+                                             str(out), program, gate, std, roster_hint)
+            ok = run_task(agent, task, dry, title=f"终审投票 | {p['label']} | {gate} 第{rnd}轮", app=p)
+            if ok and not dry:
+                wait_file(out)
+            v = voting_mod.load_vote_file(out)
+            if v:
+                v.setdefault("voter", p["key"])
+                votes.append(v)
+
+        if dry:
+            print(f"[dry-run] {gate} 第{rnd}轮将收集 {len(parts)} 张票（{vdir}）")
+            return {"verdict": "dry", "issues": [], "notes": []}
+
+        res = voting_mod.tally(votes)
+        print(f"\n【{gate}】第 {rnd}/{max_loop} 轮：{voting_mod.summarize(res)}")
+        for n in res["notes"]:
+            print("   ", n)
+
+        # 赛马记分榜：终审官在票里附 scores，给本次参战 AI 逐环节打分
+        board = board_mod.record_gate(program, chapter, gate, rnd, votes, res["verdict"])
+        if board.get("notes"):
+            for n in board["notes"]:
+                print("   ", n)
+        if board.get("scores"):
+            top = sorted(board["scores"].items(), key=lambda x: -x[1])[:3]
+            print("📊 记分榜（本轮）：" + "、".join(f"{k} {v}" for k, v in top))
+
+        if res["verdict"] == "pass":
+            print(f"✅ {gate} 通过。")
+            write_text(out_dir / "gate.json",
+                       json.dumps({**res, "round": rnd, "gate": gate},
+                                  ensure_ascii=False, indent=2))
+            board_mod.show_crown(program)
+            return res
+        if res["verdict"] == "fail":
+            print(f"❌ {gate} 未过半，按反对意见打回重做。")
+            last_issues = voting_mod.format_issues(res["issues"])
+            if rnd < max_loop:
+                continue
+            write_text(out_dir / "gate.json",
+                       json.dumps({**res, "round": rnd, "gate": gate},
+                                  ensure_ascii=False, indent=2))
+            return res
+        # 平票 → 交叉提意见 + 综合改稿 → 再投
+        print("⚖ 平票：交叉提意见 + 综合改稿后重投。")
+        cross = _cross_review_text(res["issues"])
+        merged = out_dir / f"round{rnd}" / "consolidated.md"
+        do_merge(agent, sess, merger, program,
+                 {"key": f"{gate}综合改稿"}, "cross", "综合改稿",
+                 [candidate_path], [], merged.parent, dry, extra_issues=cross or last_issues)
+        if merged.exists() and merged.stat().st_size > 0:
+            candidate_path = merged
+        last_issues = voting_mod.format_issues(res["issues"])
+
+    print(f"⚠ {gate} 连续 {max_loop} 轮未通过，转人工裁决。")
+    return {"verdict": "manual", "issues": [], "notes": ["需人工裁决"]}
+
+
+def _gate_standard(cfg, program) -> str:
+    name = PROGRAM_GATES[program]
+    gates = cfg.get("stageFinalGates") or []
+    for g in gates:
+        if g.get("gate") == name:
+            lines = [f"【{name}】通过标准："]
+            lines += [f"  □ {c}" for c in g.get("checks", [])]
+            if g.get("platformChecks"):
+                lines += [f"  □ [番茄] {c}" for c in g["platformChecks"]]
+            lines.append(f"  投票规则：{g.get('passRule', '过半通过')}；"
+                         f"平票时：{g.get('onTie', '交叉提意见+综合改稿+再投')}")
+            lines.append("  反对票必须附「问题定位卡」四件套（位置/条目/关键句/建议），缺件不计票。")
+            return "\n".join(lines)
+    return ""
+
+
+def _cross_review_text(issues) -> str:
+    if not issues:
+        return ""
+    return ("以下是平票双方交叉提出的意见，请综合两侧诉求改稿（不是二选一，是找兼容解）：\n"
+            + voting_mod.format_issues(issues))
+
+
+# ════════════════════════════ 输入材料组装 ════════════════════════════
+
+def phase_input(cfg, program, phase_cfg, chapter) -> str:
+    """为某环节准备输入材料：上游产物 + 平台约束 + 前情。"""
+    parts = []
+
+    # _UPSTREAM_PATHS：注入读取路径 + 完成判定
+    _ups = _upstream_files(program, phase_cfg, chapter)
+    _out_dir = phase_dir(program, chapter, phase_cfg["key"])
+    _read_block = "【读取资料（逐字读，唯一依据）】"
+    if _ups:
+        for _f in _ups:
+            _read_block += f"\n  · {_f}"
+    else:
+        _read_block += "\n  （本环是第一个环节，无上游产物）"
+    _read_block += (
+        "\n\n【本环节输出路径（写到这里才算完成）】"
+        f"\n  {_out_dir / 'versions' / (phase_cfg['key'] + '__<你的名字>.md')}"
+        "\n\n【完成判定】"
+        "\n  任务完成 = 下列全部满足："
+        "\n    1. 文件已保存到上面「输出路径」"
+        "\n    2. 文件内容非空（≥200 字）"
+        "\n    3. 严格按【输出格式要求】执行"
+        "\n    4. 只输出本块成品，不越界"
+    )
+    parts.append(_read_block)
+
+    # _INJECT_DESC：注入本环节的任务说明（来自 rings_items.json 的 desc）
+    _desc = (phase_cfg.get("desc") or "").strip()
+    _name = phase_cfg.get("key") or phase_cfg.get("name") or ""
+    if _desc:
+        _task_block = f"【本环节任务说明：{_name}】\n{_desc}"
+        # 从 apps.json 的 auditDirections 找本环归属方向，附上验收标准
+        try:
+            _dirs = cfg.get("auditDirections") or []
+            for _d in _dirs:
+                _rings = list(_d.get("rings") or []) + list(_d.get("extends") or [])
+                if _name in _rings:
+                    _std = _d.get("standards") or []
+                    _fail = _d.get("failPatterns") or []
+                    if _std:
+                        _task_block += "\n\n【本方向审核标准（逐条满足）】"
+                        for _s in _std:
+                            _task_block += f"\n  □ {_s}"
+                    if _fail:
+                        _task_block += "\n\n【反模式（命中即判不合格）】"
+                        for _f in _fail:
+                            _task_block += f"\n  ✗ {_f}"
+                    break
+        except Exception:
+            pass
+        parts.append(_task_block)
+
+    # _KEYWORDS：注入本环节关键词（从 apps.json 自动提取）
+    try:
+        _kw = keywords_for_phase(cfg, program, phase_cfg)
+        _kb = "【本环节关键词（落笔时逐条对照）】"
+        _has = False
+        if _kw["内容词"]:
+            _kb += "\n  内容词：" + "、".join(_kw["内容词"][:10])
+            _has = True
+        if _kw["动作词"]:
+            _kb += "\n  动作词：" + "、".join(_kw["动作词"][:10])
+            _has = True
+        if _kw["红线"]:
+            _kb += "\n  红线：" + "、".join(_kw["红线"])
+            _has = True
+        if _has:
+            parts.append(_kb)
+    except Exception:
+        pass
+    pb = platform_block(cfg)
+    if pb:
+        parts.append(pb)
+
+    prev = (WORK / program / (f"ch{chapter}" if chapter else "") / "_context.md")
+    if prev.exists():
+        parts.append("【前情/上游产物】\n" + read_text(prev))
+
+    if program == "写作" and chapter:
+        locked = WORK / "规划" / "章纲" / "phase_candidate.md"
+        if locked.exists():
+            parts.append("【本章章纲（锁定）】\n" + read_text(locked))
+        lib = WORK / "library"
+        if lib.exists():
+            recent = sorted(lib.glob("*.md"))[-2:]
+            if recent:
+                parts.append("【最近已入库章节（承接用）】\n"
+                             + "\n\n".join(read_text(p) for p in recent))
+    if program == "写作":
+        eb = env_block(cfg, phase_cfg.get("craft"))
+        if eb:
+            parts.append(eb)
+    if program == "润色" and chapter:
+        body = WORK / "写作" / f"ch{chapter}" / "正文" / "phase_candidate.md"
+        if body.exists():
+            parts.append("【待润色正文】\n" + read_text(body))
+    if program == "质检" and chapter:
+        pol = WORK / "润色" / f"ch{chapter}" / "润色" / "phase_candidate.md"
+        if pol.exists():
+            parts.append("【已润色定稿】\n" + read_text(pol))
+    if not parts:
+        parts.append("（无上游材料，请依据指令中的标准自行推进）")
+    return "\n\n".join(parts)
+
+
+# ════════════════════════════ 主流程 ════════════════════════════
+
+def cmd_check_session(cfg, sess):
+    print("=" * 74)
+    print("今日阵容校验")
+    print("=" * 74)
+    for p in sess["participants"]:
+        print(f"  ● {p['label']:<18} {p['form']:<8} {p.get('target', '')}")
+    print(f"  拼接者：{(sess['merge_app'] or {}).get('label', '(无)')}")
+    if sess["warnings"]:
+        print("\n告警：")
+        for w in sess["warnings"]:
+            print(f"  ! {w}")
+    else:
+        print("\n无告警，可以开跑。")
+    return not any("至少需要 2 名" in w for w in sess["warnings"])
+
+
+def cmd_probe(agent, cfg, sess, dry):
+    """逐个探测今日阵容的可用性，产出 probe 报告。"""
+    out_dir = WORK / "_probe"
+    ok_list, bad_list = [], []
+    for p in sess["participants"]:
+        out = out_dir / f"{p['key']}.txt"
+        task = tasks_mod.build_probe_task(p, str(out))
+        run_task(agent, task, dry, title=f"探测 | {p['label']}", app=p)
+        if dry:
+            continue
+        wait_file(out, timeout=90)
+        line = read_text(out).strip().splitlines()
+        line = line[0] if line else ""
+        if "| ready" in line and "notready" not in line:
+            ok_list.append(p["label"])
+        else:
+            bad_list.append((p["label"], line or "无输出"))
+    if not dry:
+        print("\n可用：" + ("、".join(ok_list) or "无"))
+        if bad_list:
+            print("不可用：")
+            for lb, why in bad_list:
+                print(f"  ✗ {lb} —— {why}")
+            print("请先在浏览器/客户端里登录好，再用 session.py 调整今日阵容。")
+
+
+def _upstream_candidate(program, chapter):
+    """找某个程序编排时应对其投票的上游定稿。
+
+    质检程序按你的流程：质检汇总 → 成书检验 → 上架前低级错误检查 → 入库 → 推演下一章。
+    故成书检验的表决对象是「质检汇总」的产物（缺失时退到润色定稿），
+    绝不能退到「推演下一章」——那是入库之后的下一章准备，不属于本章待检对象。
+    """
+    base = f"ch{chapter}" if chapter else ""
+    if program == "质检":
+        for cand in (
+            WORK / "质检" / base / "质检汇总" / "phase_candidate.md",
+            WORK / "润色" / base / "润色" / "phase_candidate.md",
+        ):
+            if cand.exists():
+                return cand
+    d = WORK / program / base
+    cands = sorted(d.glob("*/phase_candidate.md"))
+    return cands[-1] if cands else (d / "phase_candidate.md")
+
+
+# 只投票、不产出的环节（对上游定稿做闸门判定）
+GATE_ONLY_PHASES = ("成书检验",)
+
+
+def run_program(agent, cfg, sess, program, chapter, dry, only_phase=None,
+                once=False, max_loop=2):
+    phases = _load_phases(cfg, program)
+    if not phases:
+        print(f"[错误] apps.json 里没有程序「{program}」的环节。")
+        return
+    if only_phase:
+        phases = [p for p in phases if p["key"] == only_phase]
+        if not phases:
+            print(f"[错误] 程序「{program}」下没有环节「{only_phase}」。")
+            return
+
+    print("\n" + "█" * 74)
+    print(f"█ 程序：{program}　环节数：{len(phases)}　章：{chapter or '（一次性）'}")
+    print(f"█ 出口闸：{PROGRAM_GATES[program]}")
+    print("█" * 74)
+
+    for ph in phases:
+        if ph.get("mode") == "human":
+            print(f"\n▶ 环节「{ph['key']}」为【人工定·AI 辅助】，跳过自动网格。")
+            print(f"   说明：{ph.get('desc', '')}")
+            print(f"   请在 {WORK / program / ph['key']} 放置人工定稿，或让 AI 出候选后自行拍板。")
+            continue
+        if ph.get("mode") == "storage":
+            _do_storage(cfg, program, chapter, dry)
+            if program == "质检":
+                # 入库之后、推演下一章之前：按期连贯性综合复检
+                run_periodic_recheck(agent, cfg, sess, chapter, dry, once)
+            continue
+        if ph["key"] in GATE_ONLY_PHASES:
+            up = _upstream_candidate(program, chapter)
+            print(f"\n▶ 环节「{ph['key']}」为【只投票·不产出】，直接对上游定稿表决：{up}")
+            run_gate(agent, cfg, sess, program, up, chapter, dry, max_loop)
+            continue
+
+        inp = phase_input(cfg, program, ph, chapter)
+        cand = run_mesh_phase(agent, cfg, sess, program, ph, chapter, inp, dry, once=once)
+        if ph.get("finalGate"):
+            run_gate(agent, cfg, sess, program, cand, chapter, dry, max_loop)
+
+    # 程序出口闸
+    if not only_phase:
+        run_gate(agent, cfg, sess, program,
+                 _upstream_candidate(program, chapter), chapter, dry, max_loop)
+
+
+def _chapter_num(chapter):
+    try:
+        return int(str(chapter).lstrip("0") or "0")
+    except Exception:                              # noqa: BLE001
+        return 0
+
+
+def _recheck_input(cfg, chapter, scope_key) -> str:
+    """组装配检材料：平台约束 + 待检正文（近 10 章或全文）+ 已锁章纲。"""
+    parts = []
+    pb = platform_block(cfg)
+    if pb:
+        parts.append(pb)
+    lib = WORK / "library"
+    if lib.exists():
+        files = sorted(lib.glob("*.md"))
+        if scope_key.startswith("近"):
+            files = files[-10:]
+        if files:
+            parts.append(f"【待复检正文（{scope_key}，共 {len(files)} 章）】\n"
+                         + "\n\n".join(f"── {p.name} ──\n{read_text(p)}" for p in files))
+    locked = WORK / "规划" / "章纲" / "phase_candidate.md"
+    if locked.exists():
+        parts.append("【已锁章纲（对照主线是否跑偏）】\n" + read_text(locked))
+    if not parts:
+        parts.append("（尚无已入库正文，复检为空跑）")
+    return "\n\n".join(parts)
+
+
+def run_periodic_recheck(agent, cfg, sess, chapter, dry, once=False, force=False):
+    """每 N 章连贯性综合复检（入库之后、推演下一章之前触发）。
+
+    只复盘、不出稿、不投票：输出带优先级的「问题定位卡」清单，交作者裁定。
+    force=True 时忽略「章号是否为 N 的倍数」，手动跑一次。
+    """
+    pr = cfg.get("periodicRecheck") or {}
+    if not pr or not chapter:
+        return None
+    every = int((pr.get("trigger") or {}).get("every") or 10)
+    n = _chapter_num(chapter)
+    if not force and (n <= 0 or n % every):
+        return None
+
+    print("\n" + "★" * 74)
+    print(f"★ 每 {every} 章 · 连贯性综合复检（第 {n} 章入库后触发）")
+    print(f"★ 参与：全员 {len(sess['participants'])} 人；输出问题定位卡交作者裁定，不自动改稿")
+    print("★" * 74)
+
+    out_root = WORK / "质检" / f"ch{chapter}" / "_recheck"
+    reports = []
+    for scope in pr.get("scopes", []):
+        skey = scope.get("key", "复检")
+        checks = scope.get("checks", [])
+        std = ("【本范围的检查项（逐条核对，不得增删）】\n"
+               + "\n".join(f"  □ {c}" for c in checks)
+               + "\n\n【严重度】" + "；".join(
+                   f"{k}={v}" for k, v in (pr.get("output", {}).get("priorityLevels") or {}).items())
+               + "\n\n【输出格式】逐条给出问题定位卡：\n"
+                 "  ① 位置（程序 › 环节 › 卷 › 章 › 六要素段位 › 场景 › 第N段）\n"
+                 "  ② 命中条目（违反的标准/设定/伏笔编号）\n"
+                 "  ③ 正文关键句（原样可搜字串 + 2—4 个唯一检索词）\n"
+                 "  ④ 修改建议（改法方向 + 改动范围）\n"
+                 "  另附：优先级（P0/P1/P2/P3）与影响范围。")
+        pcfg = {"key": f"复检·{skey}"}
+        inp = _recheck_input(cfg, chapter, skey)
+        cand = run_mesh_phase(agent, cfg, sess, "质检", pcfg, chapter, inp, dry,
+                              once=once, custom_chunks=[(skey, skey, std)])
+        reports.append((skey, cand))
+
+    if dry:
+        print(f"[dry-run] 复检报告将写入 {out_root / 'recheck_report.md'}")
+        return None
+
+    body = [f"# 第 {n} 章 · 每 {every} 章连贯性综合复检报告",
+            f"\n触发：第 {n} 章入库后（下一章写作前）　参与：全员 {len(sess['participants'])} 人",
+            "\n> 作者裁定：逐卡三选一 —— 改（按类型回对应程序返修）／不改（留档，不阻断更新）／延后。",
+            "\n> AI 只出定位卡与建议，不代替作者决定。已发布正文除非作者确认否则不回改。\n"]
+    for skey, cand in reports:
+        body.append(f"\n## {skey}\n")
+        body.append(read_text(cand).strip() or "（无内容）")
+    out = out_root / "recheck_report.md"
+    write_text(out, "\n".join(body))
+    print(f"✔ 复检报告已出：{out}")
+    print("  请人工过一遍定位卡，逐张三选一（改 / 不改 / 延后）。")
+    return out
+
+
+def _do_storage(cfg, program, chapter, dry):
+    base = f"ch{chapter}" if chapter else ""
+    d = WORK / program / base
+    src = d / "上架前低级错误检查" / "phase_candidate.md"
+    if not src.exists():
+        # 回退时排除「推演下一章」——那是下一章的输入，不是本章定稿
+        cands = [p for p in sorted(d.glob("*/phase_candidate.md"))
+                 if "推演下一章" not in str(p)]
+        src = cands[-1] if cands else None
+    dst = WORK / "library" / (f"第{chapter}章.md" if chapter else "成书.md")
+    if dry:
+        print(f"[dry-run] 入库：{src} → {dst}")
+        return
+    if src and src.exists():
+        write_text(dst, read_text(src))
+        print(f"✔ 已入库：{dst}")
+    else:
+        print("[警告] 找不到可入库的定稿。")
+
+
+def main():
+    ap = argparse.ArgumentParser(description="多 AI 协作写作流水线 · 四程序编排")
+    ap.add_argument("--program", choices=["规划", "写作", "润色", "质检"])
+    ap.add_argument("--chapter", default="", help="章号，如 0057（规划程序可不填）")
+    ap.add_argument("--phase", default="", help="只跑该程序下的某一个环节")
+    ap.add_argument("--dry-run", action="store_true", help="只打印任务不驱动")
+    ap.add_argument("--loop", type=int, default=2, help="出口闸最大回改轮数")
+    ap.add_argument("--once", action="store_true", help="每环节只让 1 名 AI 产出（省额度试跑）")
+    ap.add_argument("--check-session", action="store_true", help="只校验今日阵容")
+    ap.add_argument("--probe", action="store_true", help="探测今日阵容可用性")
+    ap.add_argument("--recheck", action="store_true",
+                    help="手动触发一次按期连贯性复检（配合 --chapter）")
+    ap.add_argument("--board", nargs="?", const="ALL", default=None, metavar="程序",
+                    help="查看赛马记分榜（可带程序名过滤，如 --board 写作）")
+    args = ap.parse_args()
+
+    if args.board:
+        prog = None if args.board == "ALL" else args.board
+        board_mod.show(prog)
+        print()
+        board_mod.show_crown(prog)
+        print()
+        board_mod.show_best_at(prog)
+        return
+
+    cfg = load_cfg()
+    global agent_cfg
+    agent_cfg = cfg
+
+    roster = session_mod.load_roster()
+    today = session_mod.load_today()
+    sess = session_mod.resolve(roster, today,
+                               program=args.program, phase=args.phase or None,
+                               chapter=args.chapter or None)
+
+    if args.check_session:
+        ok = cmd_check_session(cfg, sess)
+        sys.exit(0 if ok else 1)
+
+    if not sess["participants"]:
+        print("[错误] 今日阵容为空。先用 `python session.py show` 登记今天打开了哪些 AI。")
+        sys.exit(1)
+
+    agent = None
+    if not args.dry_run:
+        try:
+            agent = get_agent()
+        except Exception as _e:
+            print(f"[警告] windows_use agent 初始化失败（{_e}）")
+            print("       若所有 AI 都走 CDP，可继续运行；否则需要 Ollama。")
+            agent = None
+
+    if args.probe:
+        cmd_probe(agent, cfg, sess, args.dry_run)
+        return
+
+    if args.recheck:
+        if not args.chapter:
+            print("[错误] --recheck 需要配合 --chapter 指定刚入库的章号。")
+            sys.exit(1)
+        run_periodic_recheck(agent, cfg, sess, args.chapter, args.dry_run, force=True)
+        return
+
+    if not args.program:
+        print("[提示] 未指定 --program。可用的程序：规划 / 写作 / 润色 / 质检")
+        print("       例：python orchestrator.py --program 写作 --chapter 0057 --dry-run")
+        cmd_check_session(cfg, sess)
+        return
+
+    run_program(agent, cfg, sess, args.program, args.chapter or None,
+                args.dry_run, args.phase or None, args.once, args.loop)
+    print("\n编排结束。")
+
+
+if __name__ == "__main__":
+    main()

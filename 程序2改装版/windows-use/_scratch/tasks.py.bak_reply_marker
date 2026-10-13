@@ -1,0 +1,383 @@
+# tasks.py — 为「每个环节 × 每个目标 AI」生成 Windows-Use 自然语言任务
+#
+# Windows-Use 是「看屏幕、控键鼠」的 GUI 代理：它读不到我们的 Python 变量，
+# 只能靠一段自然语言 SOP 去操作真实软件（网页版 AI 或桌面端 AI）。
+# 本模块只做一件事：把 (哪个 app / 哪段 prompt / 哪些输入 / 存到哪) 组装成这段 SOP。
+#
+# ── 四程序模型下共有五类原子任务 ──────────────────────────────
+#   produce  产出：按「块」产出一版（块可以是环节、子项、六要素某一段、章节）
+#   review   盲审：隔离评审某一版，按审核框架（八方向/六要素/润色清单/质检节）逐条打勾
+#   merge    拼接：读全部版本 + 全部评审，按「段落级择优」拼候选稿
+#   vote     终审：对候选稿投票（通过/不通过），反对票必须附「问题定位卡」四件套
+#   probe    探测：核对今日阵容里某个 AI 是否真的可用、已登录
+#
+# ── 今日阵容（动态） ─────────────────────────────────────────
+# app 字典由 session.py 合成，必备字段：
+#   key     标识
+#   label   显示名
+#   form    "web" 或 "desktop"（今天实际用哪种形态）
+#   target  web→网址；desktop→可执行文件路径
+#   browser web 形态用哪个浏览器（默认 EDGE）
+
+
+# ──────────────────────────────── 基础零件 ────────────────────────────────
+
+class _Steps:
+    """连续步骤号生成器。避免在 f-string 里手写序号写错。"""
+
+    def __init__(self):
+        self.i = 0
+
+    def __call__(self) -> str:
+        self.i += 1
+        return str(self.i)
+
+
+def _form_of(app: dict) -> str:
+    """取今日实际形态。兼容旧字段 type。"""
+    f = (app.get("form") or app.get("type") or "web").lower()
+    return "desktop" if f.startswith("desk") else "web"
+
+
+def _open_instruction(app: dict) -> str:
+    """生成「打开并聚焦这个 AI」的指令。electron/web 走不同路径。"""
+    label = app.get("label") or app.get("key") or "目标程序"
+    # electron / desktop 类型 → 桌面程序
+    _t = (app.get("类型") or app.get("form") or "").lower()
+    if _t in ("electron", "desktop") or _form_of(app) == "desktop":
+        exe = (app.get("target") or "").strip()
+        if exe and exe.lower().endswith(".exe"):
+            return (
+                f"启动或聚焦「{label}」桌面程序（可执行文件：{exe}）。"
+                f"若已在运行，直接切换到它的主窗口并置前；"
+                f"若未安装或启动失败，停下并报告「{label} 不可用」，不要尝试其它程序。"
+            )
+        if exe:
+            return (
+                f"启动或聚焦「{label}」桌面程序（它在系统中的识别方式：{exe}）。"
+                f"若已在运行，直接切换到其主窗口并置前；找不到就停下并报告不可用。"
+            )
+        return (
+            f"启动或聚焦「{label}」桌面程序。"
+            f"若已在运行，直接切换到其主窗口并置前；找不到就停下并报告不可用。"
+        )
+    # web 类型 → 浏览器
+    url = (app.get("target") or "").strip()
+    browser = (app.get("browser") or "EDGE").upper()
+    return (
+        f"打开 {browser} 浏览器，导航到网址 {url}，等待页面加载完成。"
+        f"确认页面处于「可输入提问」状态（输入框可见、可点击）；"
+        f"若要求登录而当前未登录，停下并报告「{label} 需先登录」，不要尝试输入账号密码。"
+    )
+
+def _new_chat_instruction(app: dict, isolate: bool = False) -> str:
+    """新建干净会话。盲审必须隔离，故附加强制说明。"""
+    base = "在该 AI 中「新建对话 / 新聊天」，确认是一个干净的空白会话（历史条目为空）。"
+    if isolate:
+        return (
+            base
+            + " 本次是隔离盲审：只能依据本次粘贴进去的内容判断，"
+              "不得点开任何历史对话、不得引用既有记忆、不得去看其它文件。"
+        )
+    return base
+
+
+def _wait_instruction() -> str:
+    return (
+        "等待 AI 完全生成回复：直到发送按钮重新可点击、且回复文字在 5 秒内不再增长。"
+        "若界面出现「停止生成 / Stop」按钮，先点它再继续。"
+    )
+
+
+def _save_block(s: _Steps, out_path: str, what: str = "AI 的最新一条回复正文") -> str:
+    """统一落盘方式：记事本另存为 UTF-8。"""
+    n1, n2, n3 = s(), s(), s()
+    return (
+        f"{n1} 用鼠标拖选或 Ctrl+A 全选{what}，按 Ctrl+C 复制。\n"
+        f"{n2} 打开记事本（notepad），Ctrl+V 粘贴。\n"
+        f"     再按 Ctrl+S 另存为，路径填：{out_path}\n"
+        f"     保存类型选「所有文件」，编码选 UTF-8，文件名后缀保留 .md 或 .json。\n"
+        f"{n3} 关闭记事本与该 AI 窗口。\n"
+        f"只执行以上步骤，不要做额外操作。"
+    )
+
+
+# 走「读文件」模式的 AI：这些 AI 的输入框容易卡，改成读文件
+FILE_MODE_AIS = {"quest", "workbuddy", "doubao", "gemini", "codebuddy"}
+
+# 任务文件目录
+from pathlib import Path
+import os as _os
+_TASK_DIR = Path(r"F:\赛马23环整合工作室\程序2改装版\windows-use\_scratch\_task_files")
+
+def _write_task_file(prompt_text, input_text, extra_note, phase_label,
+                     chunk_label, out_path, kind="produce", ai_key="unknown"):
+    """生成「给 AI 的任务文件」。AI 读这个文件后自己完成任务。"""
+    import time as _t
+    _TASK_DIR.mkdir(parents=True, exist_ok=True)
+    tag = f"{phase_label}__{chunk_label}".replace("/", "_").replace("\\", "_")
+    safe = "".join(c if c.isalnum() or c in "._-、" else "_" for c in tag)[:80]
+    ts = int(_t.time() * 1000) % 1000000
+    _safe_ai = "".join(c if c.isalnum() or c in "._-" else "_" for c in ai_key)[:20]
+    fp = _TASK_DIR / f"task__{safe}__{_safe_ai}__{ts}.md"
+
+    # 头部：任务说明 + AI 身份声明
+    body = f"# 任务：{phase_label}{('（' + chunk_label + '）') if chunk_label else ''}\n\n"
+    body += f"> 执行者：{ai_key}\n\n"
+
+    # 你的任务（来自 prompt_text）
+    body += "## 你的任务\n"
+    body += (prompt_text or "").strip() + "\n\n"
+
+    # 上游资料（只列路径，让 AI 自己读）
+    if input_text and str(input_text).strip():
+        body += "## 上游资料（读取以下路径的全部内容，作为你的执行依据）\n"
+        body += str(input_text).strip() + "\n\n"
+
+    # 输出格式要求
+    if extra_note and str(extra_note).strip():
+        body += "## 输出格式要求\n"
+        body += str(extra_note).strip() + "\n\n"
+
+    # 输出位置
+    body += "## 输出位置\n"
+    body += f"把最终结果保存到：{out_path}\n\n"
+
+    # 完成判定
+    body += "## 完成判定\n"
+    body += f"- 文件 {out_path} 存在\n"
+    body += "- 文件内容非空（≥ 200 字）\n"
+    body += "- 严格按「输出格式要求」执行\n\n"
+
+    # 约束
+    body += "## 执行约束\n"
+    body += "- 直接用你的文件读取能力读「上游资料」里的路径\n"
+    body += "- 直接用你的文件写入能力写到「输出位置」的路径\n"
+    body += "- 不要输出操作步骤、不要问我确认、不要参考其他内容\n"
+    body += "- 完成后回复「✅ 已完成」\n"
+
+    # 用 UTF-8 BOM 保存——让 Windows 下的编辑器/AI 自动识别为 UTF-8
+    # （不靠 AI 自己猜编码，防乱码）
+    fp.write_bytes(b"\xef\xbb\xbf" + body.encode("utf-8"))
+    return fp
+
+def _file_mode_task(app, prompt_text, input_text, extra_note, out_path,
+                    phase_label, chunk_label, kind):
+    """CDP 直发模式：给 AI 极简指令——读任务文件、执行、写结果。
+    AI 用文件读写能力自己完成，不需要 GUI 操作步骤。
+    """
+    _ai = app.get("key") or "unknown"
+    task_file = _write_task_file(prompt_text, input_text, extra_note,
+                                  phase_label, chunk_label, out_path, kind,
+                                  ai_key=_ai)
+    _kind_label = {
+        "produce": "产出",
+        "review": "盲审",
+        "merge": "拼接",
+    }.get(kind, "任务")
+
+    return (
+        f"请读取文件：{task_file}\n"
+        f"按文件里「## 你的任务」章节的要求执行。\n"
+        f"完成后，按文件里「## 输出位置」章节的路径保存结果。\n"
+        f"回复「✅ 已完成」即可，不要输出多余说明。"
+    )
+
+def _paste_block(prompt_text: str, *sections) -> str:
+    """组装「指令 + 若干输入材料」的粘贴体。sections 为 (标题, 正文) 序列。"""
+    parts = ["===== 指令开始 =====", prompt_text.strip()]
+    for title, body in sections:
+        if body and str(body).strip():
+            parts += ["", f"【{title}】", str(body).strip()]
+    parts.append("===== 指令结束 =====")
+    return "\n".join(parts)
+
+
+def _chunk_tag(chunk_label: str) -> str:
+    return f"（本次只做这一块：{chunk_label}）" if chunk_label else ""
+
+
+# ──────────────────────────────── 五类原子任务 ────────────────────────────────
+
+def build_produce_task(app, prompt_text, input_text, out_path, phase_label,
+                       chunk_label="", extra_note=""):
+    """① 产出：某 AI 在某个「块」上产出一版，落盘到 out_path。
+
+    phase_label 例：'规划 › 主角设计' 或 '写作 › 第0057章 › 分布 › 动'
+    chunk_label 例：'能力与能力代价' 或 '六要素·动'
+    """
+    if (app.get("key") or "").lower() in FILE_MODE_AIS or app.get("prompt_mode") == "file":
+        return _file_mode_task(app, prompt_text, input_text, extra_note,
+                               out_path, phase_label, chunk_label, "produce")
+    s = _Steps()
+    return f"""任务：用「{app.get('label')}」完成「{phase_label}」的产出{_chunk_tag(chunk_label)}，并把结果保存到指定文件。
+
+步骤：
+{s()} {_open_instruction(app)}
+{s()} {_new_chat_instruction(app)}
+{s()} 点击输入框，按 Ctrl+V，把下面整段内容原样粘贴进去（不要改写、不要省略）：
+{_paste_block(prompt_text, ("本环节输入材料", input_text), ("输出格式要求", extra_note))}
+{s()} 按 Enter 或点击发送按钮提交。
+{s()} {_wait_instruction()}
+{_save_block(s, out_path)}"""
+
+
+def build_review_task(app, prompt_text, target_text, out_path, phase_label,
+                      standard_block="", chunk_label=""):
+    """② 盲审：对某一份产出做隔离评审，按审核框架逐条打勾并输出 JSON。
+
+    standard_block 为本次要套的审核框架本体：
+      规划→八方向该方向的 standards + failPatterns
+      写作→六要素该段的 standards + failPatterns + 四条红线
+      润色→polishStandard 对应节
+      质检→qcStandard 对应节
+    """
+    if (app.get("key") or "").lower() in FILE_MODE_AIS or app.get("prompt_mode") == "file":
+        _input_combined = "【本次审核框架】\n" + (standard_block or "") + "\n\n【待审产出】\n" + (target_text or "")
+        return _file_mode_task(app, prompt_text, _input_combined, "",
+                               out_path, phase_label, chunk_label, "review")
+    s = _Steps()
+    return f"""任务：用「{app.get('label')}」对下面这份产出做隔离盲审{_chunk_tag(chunk_label)}，结果以 JSON 保存到指定文件。
+
+步骤：
+{s()} {_open_instruction(app)}
+{s()} {_new_chat_instruction(app, isolate=True)}
+{s()} 点击输入框，按 Ctrl+V，把下面整段内容原样粘贴进去（不要改写）：
+{_paste_block(prompt_text,
+              ("本次审核框架（逐条对照，不得增删条目）", standard_block),
+              ("待审产出（唯一审校对象）", target_text))}
+{s()} 按 Enter 或点击发送按钮提交。
+{s()} {_wait_instruction()}
+{s()} 只复制 AI 回复中的纯 JSON 部分（从第一个 {{ 到最后一个 }}），按 Ctrl+C 复制。
+{_save_block(s, out_path, "AI 回复中的纯 JSON 正文")}"""
+
+
+def build_merge_task(app, prompt_text, versions_text, reviews_text, out_path,
+                     phase_label, chunk_label=""):
+    """③ 拼接：指定拼接者读全部版本 + 全部盲审，按段落级择优拼出候选稿。"""
+    if (app.get("key") or "").lower() in FILE_MODE_AIS or app.get("prompt_mode") == "file":
+        _input_combined = "【各版本产出】\n" + (versions_text or "") + "\n\n【全部盲审意见】\n" + (reviews_text or "")
+        return _file_mode_task(app, prompt_text, _input_combined, "",
+                               out_path, phase_label, chunk_label, "merge")
+    s = _Steps()
+    return f"""任务：用「{app.get('label')}」担任「{phase_label}」的拼接者{_chunk_tag(chunk_label)}，按下述规则拼出一版候选稿并保存。
+
+拼接规则（必须严格遵守）：
+  · 某一段被「一致好评」的版本 → 直接取该段；
+  · 无一致好评但有明显多数 → 取多数票胜出的那一段；
+  · 某一段所有版本都被评差 → 由你依评审意见就地重写这一段（只重写这一段，不要整篇重写）；
+  · 只做「挑选 / 拼接 / 局部重写」，不要顺手通篇改写、不要改动未被点名的段落。
+
+最终校验·必做（保存之前执行）：
+  · 扫描拼合结果，找出重复出现的段落 / 句子 / 设定说明 / 关键词；
+  · 同一信息只保留最完整的一份，删除其余重复段落；
+  · 精简后输出，让下游环节读到不重复的定稿；
+  · 去重只删重复，不要删信息，不要改写未重复的内容。
+
+步骤：
+{s()} {_open_instruction(app)}
+{s()} {_new_chat_instruction(app)}
+{s()} 点击输入框，按 Ctrl+V，把下面整段内容原样粘贴进去：
+{_paste_block(prompt_text,
+              ("各版本产出（含版本编号与产出者）", versions_text),
+              ("全部盲审意见（按 好/差 标注，含问题定位）", reviews_text))}
+{s()} 按 Enter 或点击发送按钮提交。
+{s()} {_wait_instruction()}
+{_save_block(s, out_path, "AI 给出的候选稿正文")}"""
+
+
+def build_vote_task(app, prompt_text, candidate_text, out_path, phase_label,
+                    gate_label, standard_block="", roster_hint=""):
+    """④ 终审投票：对候选稿投「通过 / 不通过」，并给参战 AI 打分（赛马记分榜）。
+
+    用户硬规则：反对票必须附「问题定位卡」四件套，缺件不计票。
+    roster_hint：本次参战 AI 名单（供打分用，形如「doubao=豆包、kimi=Kimi、...」）。
+    """
+    s = _Steps()
+    extra = (f"\n赛马打分（必填）：从下列参战 AI 中排除你自己，逐一打 1—10 分并附一句依据：\n"
+             f"  {roster_hint}\n") if roster_hint else ""
+    return f"""任务：用「{app.get('label')}」对「{gate_label}」的候选稿投出终审票，以 JSON 保存到指定文件。
+
+投票规则（必须遵守）：
+  · 投「通过」：候选稿达到本闸全部硬性要求，无 S/A 级问题。
+  · 投「不通过」：必须同时给出至少一张「问题定位卡」，四件套缺一不可——
+      ① 问题出在哪（程序 › 环节 › 卷 › 章 › 六要素段位 › 场景 › 段，禁止只写章号）
+      ② 哪一条出了问题（引用审核标准条目的原文或编号，禁止「节奏不好」这类无源描述）
+      ③ 正文关键句（正文里原样存在、可直接搜索到的字串，另附 2—4 个唯一检索词）
+      ④ 修改建议（改法方向 + 改动范围，禁止「建议优化」这类空话）
+  · 缺任一件的反对票视为无效票，不计入统计。{extra}
+步骤：
+{s()} {_open_instruction(app)}
+{s()} {_new_chat_instruction(app, isolate=True)}
+{s()} 点击输入框，按 Ctrl+V，把下面整段内容原样粘贴进去：
+{_paste_block(prompt_text,
+              ("本闸验收标准", standard_block),
+              ("本次参战 AI 名单（打分对象）", roster_hint or "（未提供）"),
+              ("待表决的候选稿", candidate_text))}
+{s()} 按 Enter 或点击发送按钮提交。
+{s()} {_wait_instruction()}
+{s()} 只复制 AI 回复中的纯 JSON 部分（从第一个 {{ 到最后一个 }}），按 Ctrl+C 复制。
+{_save_block(s, out_path, "AI 回复中的纯 JSON 正文")}"""
+
+
+def build_probe_task(app, out_path):
+    """⑤ 探测：核对今日阵容里这个 AI 是否真的开着、可用、已登录。
+
+    产出一行状态文本：<key> | ready 或 notready | <形态> | <备注>
+    """
+    s = _Steps()
+    return f"""任务：核对「{app.get('label')}」当前是否可用。这是一个检查任务，不要提问任何创作内容。
+
+步骤：
+{s()} {_open_instruction(app)}
+{s()} 观察界面，判断并记录以下三点：
+     (a) 窗口/页面是否成功打开；
+     (b) 是否处于可输入提问的状态（输入框可点击），还是被登录页/验证码/升级弹窗挡住；
+     (c) 是否有明显的额度不足、排队、地区限制提示。
+{s()} 打开记事本，把下面这一行照格式填写好（备注用一句中文描述），按 Ctrl+S 另存为：
+     路径：{out_path}
+     内容格式：{app.get('key')} | ready 或 notready | {_form_of(app)} | <一句话备注>
+     保存类型选「所有文件」，编码选 UTF-8。
+{s()} 关闭记事本。不要向该 AI 发送任何提问。
+只执行以上步骤，不要做额外操作。"""
+
+
+# ──────────────────────────────── 组合任务 ────────────────────────────────
+
+def build_scaffold_task(app, prompt_text, input_text, out_path, phase_label):
+    """写作程序·aiAssist 合规路径专用：让 AI 出「写作蓝图」而非成稿正文。
+
+    番茄合规要求「剧情主线、人物对话、核心冲突必须作者亲手写」，
+    故此法只让 AI 给骨架与候选，不产出可直接粘贴上架的成稿。
+    """
+    s = _Steps()
+    return f"""任务：用「{app.get('label')}」为「{phase_label}」产出一份写作蓝图（不是成稿正文），保存到指定文件。
+
+写作蓝图必须包含（分节列出，不得直接写成品段落）：
+  1. 段落骨架：本块分几段、每段写什么（各一句话概括）；
+  2. 情节走位：事件推进顺序、转折点位置；
+  3. 细节候选：可用的具体细节 3—5 条（视觉/听觉/身体感受各至少一条）；
+  4. 对话备选：关键对话的 2—3 种不同走向（各一句代表性台词）；
+  5. 素材提示：可查证的设定/名词/典故。
+严禁输出连贯成稿的正文段落——本任务只提供蓝图。
+
+步骤：
+{s()} {_open_instruction(app)}
+{s()} {_new_chat_instruction(app)}
+{s()} 点击输入框，按 Ctrl+V，把下面整段内容原样粘贴进去：
+{_paste_block(prompt_text, ("本环节输入材料", input_text))}
+{s()} 按 Enter 或点击发送按钮提交。
+{s()} {_wait_instruction()}
+{_save_block(s, out_path, "AI 给出的写作蓝图正文")}"""
+
+
+# ──────────────────────────────── 自测 ────────────────────────────────
+if __name__ == "__main__":
+    web = {"key": "doubao", "label": "豆包", "form": "web",
+           "target": "https://www.doubao.com", "browser": "EDGE"}
+    desk = {"key": "antigravity", "label": "Google Antigravity", "form": "desktop",
+            "target": "C:/Program Files/Antigravity/Antigravity.exe"}
+    print(build_produce_task(web, "你是写手。", "输入材料", r"C:\mai\work\x.md",
+                             "规划 › 主角设计", "能力与代价"))
+    print("\n" + "=" * 70 + "\n")
+    print(build_probe_task(desk, r"C:\mai\work\probe.txt"))

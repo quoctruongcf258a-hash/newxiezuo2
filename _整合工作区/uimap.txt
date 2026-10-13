@@ -1,0 +1,17 @@
+总行数 3978
+CLASS _WBFileWorker
+CLASS _WebCaptureWorker
+CLASS _PlanGenWorker
+CLASS _PhaseRunWorker
+CLASS _StageRunWorker
+CLASS _StageNextWorker
+CLASS CollabApp
+  MTH _ai_app_names (self)
+  MTH _safe_name (name)
+  MTH _fill_existing_projects (self)
+  MTH _generate_project_plan (self, safe, info, norm)
+  MTH _stage1_run (self)
+  MTH _build_stage2_assign (self)
+  MTH _build_stage3_assign (self)
+  MTH _build_stage4_assign (self)
+  MTH _build_stage5_assign (self)

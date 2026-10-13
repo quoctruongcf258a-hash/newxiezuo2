@@ -1,0 +1,524 @@
+{
+  "_说明": "阵容程序（AI 选角）配置 · 程序零。作用：① 启动流水线前先定『谁参战』；② 每个环节（每环/每程序/每章）都可单独覆盖参战名单；③ 随时可换人（额度将尽 / 某环节某 AI 连续被评差 / 拼接者要轮换测试）。名单只收『真免费 + 每日有免费额度 + 额度够用』的；体验额度太少的一律排除并记录排除理由。改本文件即可增减 AI，不用动引擎代码。",
+
+  "program": {
+    "key": "阵容",
+    "name": "阵容程序（AI 选角）",
+    "order": 0,
+    "goal": "选定本轮参与写作与审核的 AI 名单（含拼接者）",
+    "scope": "前置程序 + 全程可覆盖：全局默认 → 按程序 → 按环节 → 按章，四层可往下钻，越具体越优先",
+    "runsAt": [
+      "流水线启动前：定全局默认阵容",
+      "每个程序（规划/写作/润色/质检）开始前：按程序覆盖",
+      "每个环节开始前：按环节覆盖（用户要求『每个环节都可以单独选可参与的 AI』）",
+      "每次写作（每章）开始时：按章覆盖（用户要求『每次写作时候，可选择参与写书的 AI 模型』）",
+      "运行中：额度将尽 / 某 AI 连续两轮被评差 / 拼接者效果不佳 → 即时换人"
+    ]
+  },
+
+  "filterRules": {
+    "_说明": "用户的硬门槛。任何 AI 进主力名单前必须全过；不过的进 excluded 并写明理由，不静默丢弃。",
+    "rules": [
+      "必须是真免费且可长期用（永久免费档 / 长期免费层）。一次性注册赠额不算主力，只能当备用。",
+      "必须有『按天或按周期重置』的免费额度——只给一次性新用户赠额、用完即止的，不进主力名单。",
+      "额度必须够用：单次额度太小（如每 2 小时约 10 条）判为『体验级』，直接排除。",
+      "通道限制：API 通道只留 豆包 + DeepSeek 两家；其余一律走『网页版』或『电脑端程序』接入（用户硬性要求）。",
+      "必须能稳定登录长期使用（不接受靠频繁换号、随时被封的）。",
+      "同一厂商同一模型只算一个席位——同源互审等于没审（见 crossVendorRule）。"
+    ],
+    "quotaLevels": {
+      "充足": "每日额度很大或近乎不限（如每天数百万 token / 文字对话不限次）→ 可当主力写手",
+      "够用": "每日额度足以跑完一个环节的多轮对话 → 可当主力，长环节注意节流",
+      "偏紧": "额度勉强够跑短环节 → 建议只用于审核/关键块，或减量使用",
+      "体验级": "额度太小，只够试用 → 按规则排除，不进主力名单"
+    }
+  },
+
+  "channelPolicy": {
+    "api":     { "allowed": ["doubao", "deepseek"], "note": "只有这两家走 API 通道；其余一律不许走 API（用户硬性要求）。" },
+    "web":     { "note": "主流接入方式：浏览器（EDGE）驱动网页版，盲审时每家新建独立会话以保证隔离。" },
+    "desktop": { "note": "电脑端程序：Windows-Use 驱动 GUI；适合长任务、批量章节与本地文件读写。" }
+  },
+
+  "accessNotes": {
+    "_说明": "网络与账号前提，只作事实说明，不涉及绕过限制。",
+    "国内直连": ["豆包", "DeepSeek", "Kimi", "通义千问", "腾讯元宝", "智谱清言", "文心一言", "讯飞星火", "海螺", "跃问", "纳米AI", "秘塔", "天工", "通义灵码", "CodeBuddy"],
+    "国外需自备网络与账号": ["Gemini", "ChatGPT", "Claude", "Copilot", "Perplexity", "Le Chat", "Qwen Chat", "Z.ai", "Kimi 国际版", "Meta AI", "Poe", "DuckDuckGo AI", "HuggingChat", "Antigravity", "Trae", "Windsurf", "Cursor", "Zed", "OpenCode", "Kilo Code"],
+    "待核实": "免费额度、速率限制、活动截止日会频繁变动；标『待核实』的以各平台官方页面为准，跑前先各开一次会话确认额度还在。"
+  },
+
+  "crossVendorRule": {
+    "key": "跨厂盲审",
+    "rule": "盲审官必须来自与写手不同的厂商；同厂商不同型号不算真正独立（同源偏置）。轮转时尽量让每家都轮到『写』与『审』两种角色。",
+    "why": "同源模型对同类问题有相同盲区，互审会同时漏掉同一个坑——这是盲审机制成立的前提。"
+  },
+
+  "roleFit": {
+    "_说明": "按环节性质推荐模型特质，避免『每个环节都随便塞同一批人』。选阵容时照着挑。",
+    "创意发散（一句话故事/书名/简介/标签）": { "recommend": ["doubao", "yuanbao", "tongyi", "kimi", "chatgpt"], "why": "中文网文腔与卖点直觉强，出候选多且接地气。" },
+    "结构严谨（世界规则/力量体系/分卷/伏笔表/时间线）": { "recommend": ["deepseek", "gemini", "kimi", "claude"], "why": "推理严谨 + 长上下文，适合盘规则与对账。" },
+    "正文落笔（六要素各段）": { "recommend": ["doubao", "claude", "chatgpt", "tongyi", "deepseek"], "why": "豆包=网文腔，Claude=文学性，ChatGPT=结构干净，通义=中文稳。" },
+    "爽点与情绪（情绪规划/爽点节奏/章内节奏自检）": { "recommend": ["doubao", "yuanbao", "kimi", "chatgpt"], "why": "对中文爽感与情绪曲线敏感。" },
+    "去 AI 味（润色·专项三）": { "recommend": ["deepseek", "claude", "doubao"], "why": "中文语感自然度高，最能识别套话与对称句。" },
+    "合规与事实核查（平台合规/版权/竞品调研）": { "recommend": ["perplexity", "copilot", "deepseek"], "why": "Perplexity/Copilot 自带联网与引用，便于查规则原文。" },
+    "长文拼接（merge）": { "recommend": ["kimi", "gemini", "yuanbao", "claude"], "why": "上下文最长 + 指令遵循好，适合吞全部草稿与评审做择优。" },
+    "批量长任务（多章连跑/文件读写）": { "recommend": ["antigravity", "doubao_desktop", "trae"], "why": "电脑端程序可直接操作本地文件，适合长链任务。" },
+    "盲审官（全部环节）": { "recommend": ["跨厂分散：写手 A 厂 → 审查 B 厂"], "why": "见 crossVendorRule。" }
+  },
+
+  "registry": [
+    {
+      "key": "doubao", "label": "豆包", "vendor": "字节跳动", "region": "国内",
+      "channel": ["api", "web", "desktop"], "target": "https://www.doubao.com",
+      "quotaLevel": "充足", "freeType": "永久免费",
+      "dailyFree": "基础对话免费额度极大、按日重置（火山方舟侧另有每日免费 token 额度，具体数额以控制台为准）",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["中文语感强", "网文腔好", "长文稳定", "多模态"],
+      "bestFor": ["正文落笔", "爽点情绪", "创意发散", "简介书名"],
+      "caution": ["高峰时段可能排队"]
+    },
+    {
+      "key": "deepseek", "label": "DeepSeek", "vendor": "深度求索", "region": "国内",
+      "channel": ["api", "web"], "target": "https://chat.deepseek.com",
+      "quotaLevel": "充足", "freeType": "永久免费",
+      "dailyFree": "网页/App 免费不限次；API 有免费额度（按平台公示为准）",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["推理强", "中文好", "长上下文", "指令遵循稳"],
+      "bestFor": ["逻辑与因果审核", "设定/力量体系", "伏笔核验", "去 AI 味"],
+      "caution": ["高峰期偶发不稳定"]
+    },
+    {
+      "key": "kimi", "label": "Kimi", "vendor": "月之暗面", "region": "国内",
+      "channel": ["web"], "target": "https://kimi.moonshot.cn",
+      "quotaLevel": "充足", "freeType": "永久免费",
+      "dailyFree": "每日约 200 万 token（新用户另有注册赠额）",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["超长上下文", "长文档处理", "结构整理"],
+      "bestFor": ["长文拼接", "伏笔时间线关系表", "全书一致性核对"],
+      "caution": []
+    },
+    {
+      "key": "tongyi", "label": "通义千问", "vendor": "阿里巴巴", "region": "国内",
+      "channel": ["web"], "target": "https://www.tongyi.com",
+      "quotaLevel": "充足", "freeType": "永久免费",
+      "dailyFree": "基础版免费；新用户另赠额度",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["中文强", "生态全", "图文理解"],
+      "bestFor": ["正文落笔", "世界规则", "简介"],
+      "caution": []
+    },
+    {
+      "key": "yuanbao", "label": "腾讯元宝", "vendor": "腾讯", "region": "国内",
+      "channel": ["web"], "target": "https://yuanbao.tencent.com",
+      "quotaLevel": "充足", "freeType": "永久免费",
+      "dailyFree": "基础版全免费，微信生态直连",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["微信生态直连", "可读公众号与文件", "中文稳"],
+      "bestFor": ["长文拼接", "正文落笔", "审核"],
+      "caution": []
+    },
+    {
+      "key": "zhipu", "label": "智谱清言", "vendor": "智谱 AI", "region": "国内",
+      "channel": ["web"], "target": "https://chatglm.cn",
+      "quotaLevel": "够用", "freeType": "永久免费（Flash 系列）",
+      "dailyFree": "GLM 系列 Flash 档长期免费；新用户另赠一次性 token 包",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["中文好", "Flash 档免费稳"],
+      "bestFor": ["正文落笔", "审核"],
+      "caution": ["一次性赠额不算主力，主力用的是免费 Flash 档"]
+    },
+    {
+      "key": "wenxin", "label": "文心一言", "vendor": "百度", "region": "国内",
+      "channel": ["web"], "target": "https://yiyan.baidu.com",
+      "quotaLevel": "够用", "freeType": "永久免费（基础版）",
+      "dailyFree": "基础版免费",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["中文常识", "资料面广"],
+      "bestFor": ["日常细节设定", "合规自查"],
+      "caution": []
+    },
+    {
+      "key": "spark", "label": "讯飞星火", "vendor": "科大讯飞", "region": "国内",
+      "channel": ["web"], "target": "https://xinghuo.xfyun.cn",
+      "quotaLevel": "够用", "freeType": "永久免费（Lite 档）",
+      "dailyFree": "Lite 档永久免费（限速）",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["中文", "语音"],
+      "bestFor": ["正文落笔", "审核"],
+      "caution": ["免费档有速率限制"]
+    },
+    {
+      "key": "minimax", "label": "海螺 AI", "vendor": "MiniMax", "region": "国内",
+      "channel": ["web"], "target": "https://hailuoai.com",
+      "quotaLevel": "够用", "freeType": "永久免费（基础）",
+      "dailyFree": "免费对话额度、按日重置",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["长文本", "多模态"],
+      "bestFor": ["正文落笔", "审核"],
+      "caution": []
+    },
+    {
+      "key": "stepfun", "label": "跃问", "vendor": "阶跃星辰", "region": "国内",
+      "channel": ["web"], "target": "https://yuewen.cn",
+      "quotaLevel": "够用", "freeType": "免费基础档 + 阶段活动",
+      "dailyFree": "基础免费档；另有阶段免费试用活动（有截止日）",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["多模态", "推理"],
+      "bestFor": ["正文落笔"],
+      "caution": ["活动类额度有截止日，主力只算基础免费档"]
+    },
+    {
+      "key": "nami", "label": "纳米 AI", "vendor": "360", "region": "国内",
+      "channel": ["web"], "target": "https://www.n.cn",
+      "quotaLevel": "够用", "freeType": "永久免费",
+      "dailyFree": "免费",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["联网检索", "聚合多模型"],
+      "bestFor": ["竞品调研", "资料搜集"],
+      "caution": []
+    },
+    {
+      "key": "metaso", "label": "秘塔 AI 搜索", "vendor": "秘塔科技", "region": "国内",
+      "channel": ["web"], "target": "https://metaso.cn",
+      "quotaLevel": "够用", "freeType": "永久免费",
+      "dailyFree": "免费",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["学术/长文检索", "带引用"],
+      "bestFor": ["设定考据", "竞品调研"],
+      "caution": []
+    },
+    {
+      "key": "tiangong", "label": "天工", "vendor": "昆仑万维", "region": "国内",
+      "channel": ["web"], "target": "https://www.tiangong.cn",
+      "quotaLevel": "够用", "freeType": "永久免费（基础）",
+      "dailyFree": "基础免费",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["中文", "检索"],
+      "bestFor": ["正文落笔", "资料搜集"],
+      "caution": []
+    },
+
+    {
+      "key": "doubao_desktop", "label": "豆包电脑版", "vendor": "字节跳动", "region": "国内",
+      "channel": ["desktop"], "target": "C:/Path/To/Doubao.exe",
+      "quotaLevel": "充足", "freeType": "永久免费",
+      "dailyFree": "同豆包网页版额度",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["桌面端可操作本地文件", "适合长链任务", "可选模型"],
+      "bestFor": ["批量长任务", "文件读写"],
+      "caution": ["exe 路径以实际安装位置为准，需在配置里改成真路径"]
+    },
+    {
+      "key": "lingma", "label": "通义灵码", "vendor": "阿里巴巴", "region": "国内",
+      "channel": ["desktop"], "target": "VS Code / JetBrains 插件",
+      "quotaLevel": "够用", "freeType": "永久免费（个人版）",
+      "dailyFree": "个人版免费",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["本地文件读写", "中文界面"],
+      "bestFor": ["批量长任务", "文件读写"],
+      "caution": ["偏工程向，网文创作需自行引导"]
+    },
+    {
+      "key": "codebuddy", "label": "CodeBuddy", "vendor": "腾讯", "region": "国内",
+      "channel": ["desktop", "web"], "target": "https://copilot.tencent.com",
+      "quotaLevel": "够用", "freeType": "免费档",
+      "dailyFree": "免费档额度",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["可读写本地项目", "中文"],
+      "bestFor": ["批量长任务", "文件读写"],
+      "caution": []
+    },
+
+    {
+      "key": "gemini", "label": "Gemini", "vendor": "Google", "region": "国外",
+      "channel": ["web"], "target": "https://gemini.google.com",
+      "quotaLevel": "充足", "freeType": "永久免费档",
+      "dailyFree": "免费档含最新 Flash 档 + 限量 Pro；按计算量计配额、约数小时刷新一次",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["百万级上下文", "长文整理强", "Deep Research", "多模态"],
+      "bestFor": ["长文拼接", "世界规则", "一致性核对"],
+      "caution": ["免费档用高级功能（Deep Research / 生图）耗配额极快"]
+    },
+    {
+      "key": "chatgpt", "label": "ChatGPT", "vendor": "OpenAI", "region": "国外",
+      "channel": ["web"], "target": "https://chatgpt.com",
+      "quotaLevel": "充足", "freeType": "永久免费档",
+      "dailyFree": "免费档纯文字对话已取消次数限制（图片/文件/语音仍各自限额）",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["文笔细腻", "结构清晰", "拒答少"],
+      "bestFor": ["正文落笔", "简介书名", "润色"],
+      "caution": ["文件上传仍限额 → 用它在长文拼接环节要分块喂"]
+    },
+    {
+      "key": "copilot", "label": "Microsoft Copilot", "vendor": "微软", "region": "国外",
+      "channel": ["web"], "target": "https://copilot.microsoft.com",
+      "quotaLevel": "够用", "freeType": "永久免费档",
+      "dailyFree": "免费档基础对话 + 联网检索",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["联网检索", "Windows 内置"],
+      "bestFor": ["合规查证", "资料搜集"],
+      "caution": []
+    },
+    {
+      "key": "perplexity", "label": "Perplexity", "vendor": "Perplexity AI", "region": "国外",
+      "channel": ["web"], "target": "https://www.perplexity.ai",
+      "quotaLevel": "够用", "freeType": "永久免费档",
+      "dailyFree": "基础搜索不限次且带引用；Pro 搜索每日少量",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["每条答案带来源", "查规则/查竞品最快"],
+      "bestFor": ["平台规则查证", "竞品调研", "合规依据检索"],
+      "caution": ["创作能力偏弱，不安排写正文章节"]
+    },
+    {
+      "key": "lechat", "label": "Mistral Le Chat", "vendor": "Mistral AI", "region": "国外",
+      "channel": ["web"], "target": "https://chat.mistral.ai",
+      "quotaLevel": "够用", "freeType": "永久免费档",
+      "dailyFree": "免费档每日额度",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["响应快", "欧洲数据托管"],
+      "bestFor": ["审核", "辅助检索"],
+      "caution": ["中文文学性一般"]
+    },
+    {
+      "key": "claude", "label": "Claude", "vendor": "Anthropic", "region": "国外",
+      "channel": ["web"], "target": "https://claude.ai",
+      "quotaLevel": "偏紧", "freeType": "永久免费档",
+      "dailyFree": "免费档每日动态上限（Sonnet/Haiku 档，不含旗舰）",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["文学性最好", "长文写作", "改稿手感好"],
+      "bestFor": ["润色·文学性", "关键章正文"],
+      "caution": ["额度动态且不公开、易中途断档 → 只安排关键块，别当主力跑全程"]
+    },
+    {
+      "key": "qwenchat", "label": "Qwen Chat（国际版）", "vendor": "阿里巴巴", "region": "国外",
+      "channel": ["web"], "target": "https://chat.qwen.ai",
+      "quotaLevel": "够用", "freeType": "永久免费档",
+      "dailyFree": "免费",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["多模型可选", "中文好"],
+      "bestFor": ["正文落笔", "审核"],
+      "caution": ["与通义千问同源，别同时当写手和盲审"]
+    },
+    {
+      "key": "zai", "label": "Z.ai（GLM 国际版）", "vendor": "智谱 AI", "region": "国外",
+      "channel": ["web"], "target": "https://chat.z.ai",
+      "quotaLevel": "够用", "freeType": "永久免费档",
+      "dailyFree": "免费",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["英文场景好"],
+      "bestFor": ["审核", "资料"],
+      "caution": ["与智谱清言同源"]
+    },
+    {
+      "key": "kimi_intl", "label": "Kimi（国际版）", "vendor": "月之暗面", "region": "国外",
+      "channel": ["web"], "target": "https://www.kimi.com",
+      "quotaLevel": "充足", "freeType": "永久免费档",
+      "dailyFree": "免费",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["超长上下文"],
+      "bestFor": ["长文拼接", "一致性核对"],
+      "caution": ["与国内 Kimi 同源"]
+    },
+    {
+      "key": "metaai", "label": "Meta AI", "vendor": "Meta", "region": "国外",
+      "channel": ["web"], "target": "https://www.meta.ai",
+      "quotaLevel": "够用", "freeType": "永久免费档",
+      "dailyFree": "免费",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["开源系模型", "多模态"],
+      "bestFor": ["审核"],
+      "caution": []
+    },
+    {
+      "key": "huggingchat", "label": "HuggingChat", "vendor": "Hugging Face", "region": "国外",
+      "channel": ["web"], "target": "https://huggingface.co/chat",
+      "quotaLevel": "够用", "freeType": "永久免费档",
+      "dailyFree": "免费（开源模型）",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["可切多种开源模型", "来源多样"],
+      "bestFor": ["盲审（换口味）"],
+      "caution": ["中文文学性弱"]
+    },
+    {
+      "key": "poe", "label": "Poe", "vendor": "Quora", "region": "国外",
+      "channel": ["web"], "target": "https://poe.com",
+      "quotaLevel": "偏紧", "freeType": "永久免费档",
+      "dailyFree": "每日少量免费积分",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["一个入口切多家模型"],
+      "bestFor": ["盲审（换口味）"],
+      "caution": ["免费积分少，只当补充席位"]
+    },
+    {
+      "key": "duckduckgo", "label": "DuckDuckGo AI Chat", "vendor": "DuckDuckGo", "region": "国外",
+      "channel": ["web"], "target": "https://duckduckgo.com/aichat",
+      "quotaLevel": "偏紧", "freeType": "永久免费档",
+      "dailyFree": "免费、匿名、每日少量",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["免登录", "匿名"],
+      "bestFor": ["盲审（换口味）"],
+      "caution": ["额度小，只当补充席位"]
+    },
+
+    {
+      "key": "antigravity", "label": "Google Antigravity", "vendor": "Google", "region": "国外",
+      "channel": ["desktop"], "target": "C:/Path/To/Antigravity.exe",
+      "installRef": "winget install --id Google.AntigravityIDE --exact",
+      "quotaLevel": "充足", "freeType": "个人档 $0/月（已 GA）",
+      "dailyFree": "个人档 $0/月，官方称对 Gemini 3.x Pro 有『慷慨的速率限制』（具体额度未公开）",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["代理式长任务", "多 agent 并行", "可切 Claude / GPT-OSS 等模型", "直接读写本地文件", "内置浏览器验证"],
+      "bestFor": ["批量长任务（多章连跑）", "本地文件读写", "长文整理"],
+      "caution": ["免费档速率限制未公开，连跑章节时可能触发限流，需分段；exe 路径以实际安装为准"]
+    },
+    {
+      "key": "trae", "label": "Trae", "vendor": "字节跳动", "region": "国外",
+      "channel": ["desktop"], "target": "C:/Path/To/Trae.exe",
+      "quotaLevel": "够用", "freeType": "免费档",
+      "dailyFree": "基础版免费；单日调用有硬上限（社区口径约 200 次/日量级，待核实）",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["内置多款主流模型", "中文界面", "可读写本地项目"],
+      "bestFor": ["批量长任务", "文件读写"],
+      "caution": ["单日调用有硬上限，长链任务要节流"]
+    },
+    {
+      "key": "zed", "label": "Zed", "vendor": "Zed Industries", "region": "国外",
+      "channel": ["desktop"], "target": "C:/Path/To/Zed.exe",
+      "quotaLevel": "偏紧", "freeType": "编辑器免费",
+      "dailyFree": "编辑器全功能免费，AI 功能额度有限",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["轻快", "AI 面板"],
+      "bestFor": ["文件读写"],
+      "caution": ["AI 额度有限，主要当编辑器用"]
+    },
+    {
+      "key": "opencode", "label": "OpenCode", "vendor": "Anomaly", "region": "国外",
+      "channel": ["desktop"], "target": "终端 CLI / 桌面版（beta）",
+      "installRef": "npm i -g opencode-ai",
+      "quotaLevel": "够用", "freeType": "工具免费 + 自带免费模型",
+      "dailyFree": "工具本身免费，且自带数个免费模型可用",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["可接 75+ 供应商", "可接本地模型", "终端自动化强"],
+      "bestFor": ["批量长任务", "文件读写"],
+      "caution": ["命令行形态，需先配好会话"]
+    },
+    {
+      "key": "kilocode", "label": "Kilo Code", "vendor": "Kilo", "region": "国外",
+      "channel": ["desktop"], "target": "VS Code / JetBrains / CLI",
+      "quotaLevel": "够用", "freeType": "工具免费 + 多个免费模型",
+      "dailyFree": "注册即用、无需 API key，提供多款免费模型",
+      "status": "待核实", "passFilter": true,
+      "strengths": ["免费模型多", "免 key"],
+      "bestFor": ["批量长任务"],
+      "caution": ["免费模型列表会变动"]
+    },
+    {
+      "key": "cline", "label": "Cline", "vendor": "Cline", "region": "国外",
+      "channel": ["desktop"], "target": "VS Code 插件 / CLI",
+      "quotaLevel": "够用", "freeType": "工具免费（模型用豆包/DeepSeek API）",
+      "dailyFree": "工具免费；模型走豆包或 DeepSeek 的 API 额度",
+      "status": "已核实", "passFilter": true,
+      "strengths": ["壳子免费", "能直接读写本地文件", "可挂豆包/DeepSeek API"],
+      "bestFor": ["批量长任务", "本地文件读写"],
+      "caution": ["本身不含模型，必须配 API —— 且按规则只能用豆包或 DeepSeek"]
+    }
+  ],
+
+  "excluded": [
+    { "key": "grok", "label": "Grok", "region": "国外", "quotaLevel": "体验级", "excludeReason": "免费档约每 2 小时 10 条，属体验级，按硬门槛排除。" },
+    { "key": "github_copilot", "label": "GitHub Copilot Free", "region": "国外", "quotaLevel": "体验级", "excludeReason": "免费档是月度额度（少量补全 + 少量 chat），不是每日额度且额度偏小，排除。" },
+    { "key": "cursor", "label": "Cursor（Hobby）", "region": "国外", "quotaLevel": "体验级", "excludeReason": "免费档为月度少量补全 + 少量慢速高级请求，属体验级，排除。" },
+    { "key": "windsurf", "label": "Windsurf", "region": "国外", "quotaLevel": "偏紧", "excludeReason": "免费档为月度少量高级请求，非每日重置额度，排除。" },
+    { "key": "gemini_cli", "label": "Gemini CLI", "region": "国外", "quotaLevel": "体验级", "excludeReason": "个人账号免费额度口径已变动，现仅有不公开的小额限流（社区口径每日个位/数十次），排除；Gemini 改用网页版接入。" },
+    { "key": "qwen_code", "label": "Qwen Code", "region": "国内", "quotaLevel": "体验级", "excludeReason": "免费额度口径冲突且已被大幅削减/关停（多方口径不一），不满足『每日稳定免费额度』，排除；通义改用网页版接入。" },
+    { "key": "groq_cerebras", "label": "Groq / Cerebras 等纯 API 平台", "region": "国外", "quotaLevel": "—", "excludeReason": "属纯 API 通道，而规则限定 API 只留豆包 + DeepSeek，排除。" },
+    { "key": "zhipu_gift", "label": "各家『一次性注册赠额』", "region": "—", "quotaLevel": "—", "excludeReason": "一次性赠额用完即止、不按日重置，不作为主力（对应平台的免费档仍可用，见 registry）。" }
+  ],
+
+  "presets": [
+    {
+      "key": "slim3", "label": "极简三人组（最省额度）",
+      "participants": ["doubao", "deepseek", "gemini"],
+      "merge_app": "doubao",
+      "why": "三家跨厂、额度都充足。一写两审、轮转写手即可跑通全流程。先用这套验证流水线，再扩阵容。"
+    },
+    {
+      "key": "steady5", "label": "稳健五人组（推荐起步）",
+      "participants": ["doubao", "deepseek", "kimi", "tongyi", "gemini"],
+      "merge_app": "yuanbao",
+      "why": "五家跨厂、每日额度都够用；写作与盲审可充分轮转，长文拼接交给长上下文档。"
+    },
+    {
+      "key": "cn7", "label": "国内七人组（不用外网）",
+      "participants": ["doubao", "deepseek", "kimi", "tongyi", "yuanbao", "zhipu", "spark"],
+      "merge_app": "yuanbao",
+      "why": "全部国内直连，稳定性最好，适合长时间连跑。"
+    },
+    {
+      "key": "literary", "label": "文笔强化组（润色/关键章）",
+      "participants": ["claude", "doubao", "deepseek", "chatgpt"],
+      "merge_app": "deepseek",
+      "why": "Claude 文学性最好但额度偏紧 → 只安排润色与关键块；平时用豆包/DeepSeek 扛量。"
+    },
+    {
+      "key": "crossVendor8", "label": "跨厂八人组（盲审最严）",
+      "participants": ["doubao", "deepseek", "kimi", "tongyi", "gemini", "chatgpt", "copilot", "claude"],
+      "merge_app": "kimi",
+      "why": "八家分属八个不同厂商，盲审偏置最小；代价是窗口操作量与额度消耗最大。"
+    },
+    {
+      "key": "desktopBatch", "label": "桌面批处理组（多章连跑）",
+      "participants": ["doubao_desktop", "antigravity", "trae", "deepseek"],
+      "merge_app": "kimi",
+      "why": "电脑端程序直接读写本地文件，适合把已定稿章节批量落盘、批量过润色/质检。"
+    }
+  ],
+
+  "selection": {
+    "_说明": "当前生效阵容。四层覆盖：global < program < phase < chapter，越具体越优先；某一层留空表示继承上一层。",
+    "toBeConfirmed": true,
+    "mode": "global",
+    "global": ["doubao", "deepseek", "kimi", "tongyi", "gemini"],
+    "merge_app": "yuanbao",
+    "program": {
+      "规划": [],
+      "写作": [],
+      "润色": [],
+      "质检": []
+    },
+    "perPhase": {
+      "_说明": "按环节覆盖参战 AI。留空 [] = 继承 global。填了就以填的为准（可增可减）。",
+      "主角设计": [],
+      "世界规则最小集": ["deepseek", "gemini", "kimi", "tongyi"],
+      "前30章章纲": [],
+      "书名设计": ["doubao", "yuanbao", "chatgpt", "tongyi"],
+      "上架简介": ["doubao", "chatgpt", "yuanbao"],
+      "正文": [],
+      "润色": ["claude", "doubao", "deepseek"],
+      "逻辑设定一致": ["deepseek", "gemini", "claude"],
+      "平台合规": ["perplexity", "copilot", "deepseek"],
+      "成书检验": ["kimi", "gemini", "deepseek"]
+    },
+    "perChapter": {
+      "_说明": "写作程序里逐章覆盖（用户要求：每次写作时可选择参与写书的 AI）。key 为章号，留空表示继承上层。",
+      "示例：0001": []
+    }
+  },
+
+  "mergeAppRule": {
+    "_说明": "拼接者（merge_app）单独指定且可换 —— 用户明确要求『要测试谁拼得好，还要能换』。",
+    "candidates": ["yuanbao", "kimi", "gemini", "claude", "doubao"],
+    "howToTest": "连续 N 个环节记录该拼接者拼出的稿被『终审采纳的比例』与被打回次数，采纳率高者固定；出现明显下滑或额度吃紧就换。",
+    "record": []
+  },
+
+  "switchRules": [
+    "额度将尽 → 同档位替补顶上：豆包↔元宝↔通义 / DeepSeek↔智谱↔星火 / Gemini↔Copilot / Claude↔ChatGPT / Kimi↔Kimi 国际版。",
+    "某 AI 在某环节连续两轮产出的块被评差 → 该环节把它的席位换掉（但其他环节不动）。",
+    "拼接者按合并采纳率轮换测试，优者固定、劣者换下（见 mergeAppRule）。",
+    "每季度复核一次名单：新模型上线、免费政策变动、额度缩水都要重跑 filterRules 过滤。",
+    "同一厂商席位过多时主动分散 —— 盲审必须跨厂（见 crossVendorRule）。"
+  ],
+
+  "costNote": "阵容大小直接决定窗口操作量：环节数 × 参战数 N × (N 写 + N×(N-1) 盲审 + 1 拼) 次。三人组跑通全流程的成本约为八人组的十分之一。建议顺序：① 极简三人组验证流水线通不通；② 稳健五人组正式起跑；③ 只在关键环节（力量体系 / 开篇三章 / 润色 / 合规）临时扩到八人组。另：额度偏紧的席位（Claude、Poe、DuckDuckGo）只安排关键块，不要让它们扛全程。"
+}

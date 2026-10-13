@@ -1,0 +1,772 @@
+"""混合发送器：CDP 优先（纯回车），pyautogui 兜底"""
+import json, urllib.request, websocket, time, os, sys
+
+# 配置路径跟随程序位置推导，不写死绝对路径
+PROGRAM_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 静态兜底（配置读不到时用）
+_FALLBACK_CDP = {
+    "QUEST": (9224, ""), "TraeWork": (9225, ""), "Qianwen": (9225, ""),
+    "WorkBuddy": (9227, ""), "ZCode": (9228, ""), "DeepSeek": (9222, "deepseek"),
+}
+PYA_APPS = {"CodeBuddy": "CodeBuddy CN", "Doubao": "Doubao"}
+
+# 记录每个 AI 最近一次发送的指令，供抓取回复时排除“自己发的提问”
+_LAST_SENT = {}
+
+# AI 应用配置必须与 UI（players.py → rules/ai_apps.json）同一份，
+# 否则这里读不到 cdp_port，应用会退化为 pyautogui 按旧坐标点击，导致定位失败。
+try:
+    sys.path.insert(0, os.path.join(PROGRAM_ROOT, "app"))
+    import paths as _paths
+    _RULES_DIR = _paths.RULES_DIR
+except Exception:
+    _RULES_DIR = os.path.join(PROGRAM_ROOT, "rules")
+
+_RULES_CFG = os.path.join(_RULES_DIR, "ai_apps.json")
+_OLD_CFG = os.path.join(PROGRAM_ROOT, "config", "ai_apps.json")
+CFG_FILE = _RULES_CFG if os.path.exists(_RULES_CFG) else _OLD_CFG
+
+def _load_cfg():
+    try:
+        with open(CFG_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def _lookup(ai):
+    """从配置里查 CDP 端口，返回 (port, url_kw)；无则返回 None"""
+    for e in _load_cfg():
+        if e.get("名字") == ai:
+            port = e.get("cdp_port")
+            typ  = e.get("类型", "")
+            if port:
+                # web 类型带上 url 关键字（便于匹配标签页）
+                kw = ""
+                if typ == "web":
+                    u = (e.get("url") or "").lower()
+                    for token in ("deepseek","kimi","claude","chatgpt","gemini","tongyi","doubao"):
+                        if token in u: kw = token; break
+                return (port, kw)
+            return None
+    return _FALLBACK_CDP.get(ai)
+
+# 兼容旧代码对 CDP_APPS 的用法（动态函数式访问）
+class _CDPProxy:
+    def __contains__(self, k): return _lookup(k) is not None
+    def __getitem__(self, k):
+        v = _lookup(k)
+        if v is None: raise KeyError(k)
+        return v
+    def get(self, k, d=None): return _lookup(k) or d
+CDP_APPS = _CDPProxy()
+COORD_FILE = os.path.join(PROGRAM_ROOT, "windows-use", "ai_coords.json")
+
+
+# 给输入框候选打分的核心 JS：先过滤不可见/零尺寸元素，再按面积 + 语义属性排序。
+# 豆包等应用页面里存在多个隐藏 input（1×1 或 0×0），必须过滤掉，否则会命中假输入框。
+_SCORE_JS = r"""
+(() => {
+  const sels = 'textarea, [contenteditable="true"], [role="textbox"], input[type="text"]';
+  const out = [];
+  for (const el of document.querySelectorAll(sels)) {
+    const r = el.getBoundingClientRect();
+    const st = getComputedStyle(el);
+    if (r.width <= 0 || r.height <= 0) continue;
+    if (st.display === 'none' || st.visibility === 'hidden' || st.opacity === '0' || el.offsetParent === null) continue;
+    // 面积只作为同语义下的兜底判据，不能作为主判据：
+    // 侧边工具台打开后，其中的「网址/链接」输入框面积可能反而比被挤窄的聊天框更大。
+    let score = r.width * r.height;
+    const meta = [el.getAttribute('placeholder'), el.getAttribute('aria-label'),
+                  el.getAttribute('role'), el.getAttribute('name')].filter(Boolean).join(' ');
+    // 聊天输入框几乎都是 textarea 或 contenteditable；普通 input 多为搜索框/网址框，重罚
+    if (el.tagName === 'TEXTAREA' || el.getAttribute('contenteditable') === 'true') score += 5000000;
+    else score -= 5000000;
+    // 明确的非聊天用途
+    if (/链接|网址|网络地址|粘贴|url|link|搜索|search|find/i.test(meta)) score -= 10000000;
+    // 明确的聊天语义
+    if (/提问|问题|发送消息|消息|对话|ask|message|prompt|send|chat/i.test(meta)) score += 5000000;
+    // Slate 富文本编辑器 = 聊天输入框（WorkBuddy/QUEST 等），绝对优先
+    if (el.getAttribute('data-slate-editor') === 'true'
+        || el.querySelector('[data-slate-editor=true]')) score += 100000000;
+    if (el.getAttribute('role') === 'textbox') score += 20000000;
+    // 文件编辑器容器，重罚
+    if (/root-editable|file-edit|code-editor|monaco|editor-container/i.test(
+            (el.className || '').toString())) score -= 100000000;
+    out.push({el: el, score: score});
+  }
+  out.sort(function(a, b) { return b.score - a.score; });
+  return out;
+})()
+"""
+
+_FIND_INPUT_JS = (
+    "(() => { var s = " + _SCORE_JS + "; "
+    "if (!s.length) return null; "
+    "var el = s[0].el; var r = el.getBoundingClientRect(); "
+    "return {x: Math.round(r.x + r.width/2), y: Math.round(r.y + r.height/2), "
+    "n: s.length, area: Math.round(r.width * r.height), "
+    "cls: (el.className||'').toString().slice(0,60)}; })()"
+)
+
+# 用 JS 直接聚焦输入框：概览区/浮层遮挡时鼠标点击会落到浮层上，JS 聚焦不受影响
+_FOCUS_JS = (
+    "(() => { var s = " + _SCORE_JS + "; "
+    "if (!s.length) return false; "
+    "s[0].el.focus(); "
+    "return document.activeElement === s[0].el; })()"
+)
+
+_LEFT_JS = (
+    "(() => { var s = " + _SCORE_JS + "; "
+    "if (!s.length) return -1; "
+    "var el = s[0].el; "
+    "var slate = el.querySelector('[data-slate-string=\"true\"]'); "
+    "if (slate) return slate.textContent.length; "
+    "if (el.value !== undefined) return el.value.length; "
+    "var clone = el.cloneNode(true); "
+    "clone.querySelectorAll('[data-slate-placeholder=\"true\"]').forEach(function(n){ n.remove(); }); "
+    "return (clone.textContent || '').trim().length; })()"
+)
+
+
+class CDPTab:
+    def __init__(self, port, url_kw=""):
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5) as f:
+            pages = [t for t in json.load(f) if t.get("type") == "page"]
+        if not pages:
+            raise Exception(f"端口 {port} 无页面")
+
+        def _internal(p):
+            u = p.get("url", "").lower()
+            return ("-background" in u) or ("-launcher" in u) or u.startswith("devtools://")
+
+        # 排序：关键字匹配 → 非内部页 → 内部页兜底
+        ordered = []
+        if url_kw:
+            ordered += [p for p in pages
+                        if url_kw in p.get("url", "").lower() and not _internal(p)]
+        ordered += [p for p in pages if not _internal(p)]
+        ordered += [p for p in pages if _internal(p)]
+
+        # 逐个页面探测：收集「存在可见输入框」的页面，取输入框面积最大的那个。
+        # 概览区/启动器等页面里往往只有小搜索框，按面积取最大即可稳定选中真正的聊天输入。
+        self.ws = None
+        last_err = None
+        found = []      # [(area, page, ws, box)]
+        for p in ordered:
+            try:
+                ws = websocket.create_connection(
+                    p["webSocketDebuggerUrl"], timeout=15, suppress_origin=True)
+                self.ws = ws
+                self.mid = 0
+                box = self.js(_FIND_INPUT_JS)
+                if box:
+                    # 内部页（launcher/background）仅作兜底，有正常页面时绝不优先
+                    rank = 0 if not _internal(p) else -1
+                    # 优先 Slate 聊天输入框（避免误选右侧文件编辑器里的大 textarea）
+                    try:
+                        slate = 1 if self._is_slate_input() else 0
+                    except Exception:
+                        slate = 0
+                    found.append((rank, slate, int(box.get("area") or 0), p, ws, box))
+                else:
+                    ws.close()
+                    self.ws = None
+            except Exception as e:
+                last_err = e
+                try:
+                    if self.ws:
+                        self.ws.close()
+                except Exception:
+                    pass
+                self.ws = None
+        if found:
+            # 排序键：(rank, slate, area) —— slate=1 的聊天框优先
+            found.sort(key=lambda x: (x[0], x[1], x[2]), reverse=True)
+            rank, slate, area, p, ws, box = found[0]
+            self.ws = ws
+            self.mid = 0
+            self.title = p.get("title", "")
+            for _, _, _, _p, _ws, _ in found[1:]:
+                try:
+                    _ws.close()
+                except Exception:
+                    pass
+            return
+        raise Exception(f"端口 {port} 无可用聊天页面（{last_err}）")
+
+    def cmd(self, method, **params):
+        self.mid += 1
+        self.ws.send(json.dumps({"id": self.mid, "method": method, "params": params}))
+        while True:
+            r = json.loads(self.ws.recv())
+            if r.get("id") == self.mid:
+                return r
+
+    def js(self, code):
+        return self.cmd("Runtime.evaluate", expression=code, returnByValue=True)["result"]["result"].get("value")
+
+    def _press_escape(self):
+        """按 Esc 收起概览区/浮层等临时面板，让聊天输入框恢复可见可取。"""
+        for _ in range(2):
+            self.cmd("Input.dispatchKeyEvent", type="rawKeyDown",
+                     windowsVirtualKeyCode=27, code="Escape", key="Escape")
+            time.sleep(0.06)
+            self.cmd("Input.dispatchKeyEvent", type="keyUp",
+                     windowsVirtualKeyCode=27, code="Escape", key="Escape")
+            time.sleep(0.25)
+
+    def _copy_to_clipboard(self, text):
+        """把文本写入系统剪贴板：优先用 pyperclip/OS API（实测可靠），失败再退化到
+        CDP Input.setClipboard / JS execCommand。供后续 CDP Paste 命令读取。"""
+        # 1) pyperclip（跨平台，Windows 下调用 OS 剪贴板 API）
+        try:
+            import pyperclip
+            pyperclip.copy(text)
+            return True
+        except Exception:
+            pass
+        # 2) Windows ctypes 原生剪贴板（无 pyperclip 时）
+        try:
+            import ctypes, subprocess, sys
+            if sys.platform == "win32":
+                # 用 powershell 写剪贴板，避免 32/64 位 ctypes 指针问题
+                _ = subprocess.run(
+                    ["powershell", "-command",
+                     f"Set-Clipboard -Value {subprocess.list2cmdline([text])}"],
+                    check=True, capture_output=True, text=True, encoding="utf-8")
+                return True
+        except Exception:
+            pass
+        # 3) CDP 剪贴板命令（返回 OK 但实际不一定生效，仅作兜底）
+        try:
+            self.cmd("Input.setClipboard", text=text, clipboardTypes=["text/plain"])
+            return True
+        except Exception:
+            try:
+                self.cmd("Browser.setClipboard", text=text, clipboardTypes=["text/plain"])
+                return True
+            except Exception:
+                pass
+        # 4) JS execCommand（需要 user activation，大概率失败）
+        try:
+            js = (
+                "(() => { try {"
+                "  var ta = document.createElement('textarea');"
+                "  ta.value = __T__;"
+                "  ta.style.position='fixed'; ta.style.top='0'; ta.style.left='0';"
+                "  ta.style.opacity='0'; ta.style.width='1px'; ta.style.height='1px';"
+                "  document.body.appendChild(ta); ta.focus(); ta.select();"
+                "  var ok = document.execCommand('copy');"
+                "  document.body.removeChild(ta); return ok ? 1 : 0;"
+                "} catch(e) { return -1; } })()"
+            ).replace("__T__", json.dumps(text))
+            return self.js(js) == 1
+        except Exception:
+            return False
+
+    def _paste_keys(self):
+        """触发当前焦点元素的原生粘贴：用 CDP Input.dispatchKeyEvent 的 commands=['Paste']
+        直接下发浏览器编辑命令，比模拟 Ctrl+V 更可靠（实测可正确读取系统剪贴板并触发
+        网页 paste 事件，包括把长文转成文件附件的行为）。"""
+        self.cmd("Input.dispatchKeyEvent", type="rawKeyDown",
+                 windowsVirtualKeyCode=86, code="KeyV", key="v",
+                 commands=["Paste"])
+        time.sleep(0.25)
+
+    def _paste_via_event(self, text):
+        """合成 paste 事件：把文本塞进 clipboardData 直接派发到当前焦点元素。
+        走的是网页「自身粘贴管线」（会被识别为粘贴、转成文件附件），而非直接改 DOM，
+        因此不会像 value setter / execCommand 那样让网页卡死；也不依赖系统剪贴板与
+        用户激活，比 CDP 写剪贴板 + Ctrl+V 更稳。返回是否成功派发。"""
+        js = (
+            "(() => { try {"
+            "  var el = document.activeElement; if (!el) return 0;"
+            "  var dt = new DataTransfer(); dt.setData('text/plain', __T__);"
+            "  var ev = new ClipboardEvent('paste', {clipboardData: dt, bubbles: true, cancelable: true});"
+            "  el.dispatchEvent(ev); return 1;"
+            "} catch(e) { return -1; } })()"
+        ).replace("__T__", json.dumps(text))
+        try:
+            return self.js(js) == 1
+        except Exception:
+            return False
+
+    def _is_slate_input(self):
+        """当前得分最高的输入框是否为 Slate 富文本编辑器（data-slate-editor）。
+
+        Slate（QUEST/WorkBuddy 等应用）对 DOM 直接操作极其敏感：
+        用 selectNodeContents + execCommand 注入会让 Slate 内部模型与 DOM 失配，
+        报『Cannot resolve a Slate node from DOM node』并卡死输入框（需手动点重试）。
+        这类输入框必须走「真·粘贴」管线（系统剪贴板 + CDP Paste 命令）。
+        """
+        js = ("(() => { var s = " + _SCORE_JS + "; if (!s.length) return false;"
+              "var el = s[0].el;"
+              "if (el.getAttribute && el.getAttribute('data-slate-editor') === 'true') return true;"
+              "return !!el.querySelector('[data-slate-editor=true]'); })()")
+        try:
+            return bool(self.js(js))
+        except Exception:
+            return False
+
+    def _inject_text(self, text):
+        """主注入：React 受控框用原生 value setter + input 事件；富文本 contenteditable
+        用 execCommand('insertText')（Slate/ProseMirror/Lexical 等可正确捕获并保留换行）。
+        比 CDP 剪贴板粘贴更可靠（不依赖 user activation）。"""
+        js = (
+            "(() => { try {"
+            "  var s = __SCORE__; if (!s.length) return false;"
+            "  var el = s[0].el; var t = __T__; el.focus();"
+            "  if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {"
+            "    var setter = Object.getOwnPropertyDescriptor("
+            "        window.HTMLTextAreaElement.prototype, 'value').set;"
+            "    setter.call(el, t);"
+            "    el.dispatchEvent(new Event('input', {bubbles:true}));"
+            "    el.dispatchEvent(new Event('change', {bubbles:true}));"
+            "    return el.value.length > 0;"
+            "  } else {"
+            "    var sel = window.getSelection(); sel.removeAllRanges();"
+            "    var r = document.createRange();"
+            "    r.selectNodeContents(el); r.collapse(false); sel.addRange(r);"
+            "    var ok = document.execCommand('insertText', false, t);"
+            "    if (!ok) { el.textContent = t; }"
+            "    el.dispatchEvent(new Event('input', {bubbles:true}));"
+            "    return true;"
+            "  }"
+            "} catch(e) { return false; } })()"
+        ).replace("__SCORE__", _SCORE_JS).replace("__T__", json.dumps(text))
+        try:
+            return self.js(js) is True
+        except Exception:
+            return False
+
+    def send_text(self, text, ai=None):
+        # 1. 找输入框。概览区弹出时输入可能被卸载或被浮层遮挡：先按 Esc 收起面板再重试
+        box = None
+        for _attempt in range(3):
+            box = self.js(_FIND_INPUT_JS)
+            if box:
+                break
+            self._press_escape()
+            time.sleep(0.8)
+        if not box:
+            return "no-input"
+
+        # 2. 优先用 JS 聚焦：浮层遮挡时鼠标点击会落到浮层上，JS 聚焦不受影响
+        self.js(_FOCUS_JS)
+        time.sleep(0.25)
+
+        def _clear():
+            self.cmd("Input.dispatchKeyEvent", type="rawKeyDown",
+                     windowsVirtualKeyCode=65, code="KeyA", key="a", modifiers=2)
+            time.sleep(0.05)
+            self.cmd("Input.dispatchKeyEvent", type="keyUp",
+                     windowsVirtualKeyCode=65, code="KeyA", key="a", modifiers=2)
+            time.sleep(0.15)
+            self.cmd("Input.dispatchKeyEvent", type="rawKeyDown",
+                     windowsVirtualKeyCode=46, code="Delete", key="Delete")
+            time.sleep(0.05)
+            self.cmd("Input.dispatchKeyEvent", type="keyUp",
+                     windowsVirtualKeyCode=46, code="Delete", key="Delete")
+            time.sleep(0.3)
+
+        def _click_box():
+            self.cmd("Input.dispatchMouseEvent", type="mouseMoved", x=box["x"], y=box["y"])
+            time.sleep(0.1)
+            self.cmd("Input.dispatchMouseEvent", type="mousePressed",
+                     x=box["x"], y=box["y"], button="left", clickCount=1)
+            time.sleep(0.08)
+            self.cmd("Input.dispatchMouseEvent", type="mouseReleased",
+                     x=box["x"], y=box["y"], button="left", clickCount=1)
+            time.sleep(0.5)
+
+        _clear()
+        # 区分网页端 / 本地端（关键）：
+        #  - 网页端：只能用「真·粘贴」（CDP 写剪贴板 + Ctrl+V）。强行用 setter/execCommand
+        #    注入会让网页彻底卡死；且粘贴后网页多把文本转成文件附件、输入框变空，
+        #    故绝不按 _LEFT_JS 判定「没送进去」而去注入。
+        #  - 本地端（electron）：用原生注入（setter/execCommand）更稳，不会卡死。
+        try:
+            is_web = _type_of(ai) == "web"
+        except Exception:
+            is_web = False
+
+        if is_web:
+            # 网页端：必须走真·粘贴（系统剪贴板 + CDP Paste 命令）。
+            # 实测 CDP commands=['Paste'] 能可靠触发网页 paste 事件并读取系统剪贴板，
+            # 包括把长文转成文件附件；注入（setter/execCommand）会让网页彻底卡死。
+            if self._copy_to_clipboard(text):
+                self._paste_keys()
+                time.sleep(1.2)
+            else:
+                # 剪贴板写失败时，退而尝试合成 paste 事件（自带 clipboardData）
+                self._paste_via_event(text)
+                time.sleep(1.2)
+        else:
+            # 本地端（electron）：Slate 富文本输入框（QUEST 等）绝不能用原生注入——
+            # 会触发『Cannot resolve a Slate node from DOM node』卡死输入框，
+            # 与网页端一样必须走「真·粘贴」（系统剪贴板 + CDP Paste 命令）；
+            # 其余普通输入框维持原生注入（更稳、不依赖剪贴板）。
+            if self._is_slate_input():
+                if self._copy_to_clipboard(text):
+                    self._paste_keys()
+                    time.sleep(1.2)
+                else:
+                    self._paste_via_event(text)
+                    time.sleep(1.2)
+            else:
+                self._inject_text(text)
+                time.sleep(1.0)
+                if self.js(_LEFT_JS) == 0:
+                    self._press_escape()
+                    _click_box()
+                    self.js(_FOCUS_JS)
+                    _clear()
+                    self._inject_text(text)
+                    time.sleep(1.0)
+        # 5. 发送（QUEST=Ctrl+Enter，其他=Enter）
+        # IDE 风格输入框：Enter 是换行，Ctrl+Enter 才发送
+        _mods = 2 if ai == "QUEST" else 0
+        self.cmd("Input.dispatchKeyEvent", type="rawKeyDown",
+                 windowsVirtualKeyCode=13, code="Enter", key="Enter", modifiers=_mods)
+        time.sleep(0.05)
+        self.cmd("Input.dispatchKeyEvent", type="char", text="\r", modifiers=_mods)
+        time.sleep(0.05)
+        self.cmd("Input.dispatchKeyEvent", type="keyUp",
+                 windowsVirtualKeyCode=13, code="Enter", key="Enter", modifiers=_mods)
+        time.sleep(1.2)
+
+        def _left():
+            return self.js(_LEFT_JS)
+
+        left = _left()
+        if left > 0 and ai != "WorkBuddy":
+            btn = self.js("""
+            (() => {
+                const btns = [...document.querySelectorAll('button, [role="button"]')];
+                let b = btns.find(x => {
+                    const a = (x.getAttribute('aria-label')||'').trim();
+                    return a === '发送' || a === '发送消息' || a === 'Send message' || a === 'Send';
+                });
+                if (!b) b = document.querySelector('.cr-send-button, .chat-input-v2-send-button');
+                if (!b) return null;
+                if (b.disabled) return {disabled: true};
+                const r = b.getBoundingClientRect();
+                return {x: Math.round(r.x + r.width/2), y: Math.round(r.y + r.height/2)};
+            })()
+            """)
+            if btn and not btn.get("disabled"):
+                self.cmd("Input.dispatchMouseEvent", type="mouseMoved", x=btn["x"], y=btn["y"])
+                time.sleep(0.1)
+                self.cmd("Input.dispatchMouseEvent", type="mousePressed", x=btn["x"], y=btn["y"], button="left", clickCount=1)
+                time.sleep(0.08)
+                self.cmd("Input.dispatchMouseEvent", type="mouseReleased", x=btn["x"], y=btn["y"], button="left", clickCount=1)
+                time.sleep(1.5)
+                return f"剩余={_left()} (按钮兜底)"
+        if left < 100:
+            return "已发送"
+        return f"剩余={left}"
+
+    def read_reply(self):
+        """读取页面上最新的 AI 回复文本（网页端无法自写文件时用来抓取落盘）。
+
+        策略（跨站点通用）：
+          1) 明确语义/角色标记的助手消息容器（data-role、assistant/bot/reply/answer 等 class）；
+          2) 会话/消息列表容器，取最后一个「回合」子元素（兜底覆盖未带语义 class 的站点）；
+          3) 仍为空则回退到整个 body 的文本。
+        同时排除与「自己刚发的提问」高度重合的块，避免把提问误当答案保存。
+        """
+        sent = (getattr(self, "_sent", "") or "").strip()
+        code = r"""
+        (() => {
+          const SENT = __SENT__;
+          const norm = (s) => (s||'').replace(/\s+/g, '');
+          const vis = (el) => {
+            const t = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+            return t;
+          };
+          const seen = new Set();
+          const A = [];
+          const add = (el) => { if (el && !seen.has(el)) { seen.add(el); A.push(el); } };
+          const roleSel = '[data-role="assistant"],[data-role="bot"],[role="assistant"],[role="bot"]';
+          const clsHints = ['message','Message','assistant','Assistant','reply','Reply','answer','Answer',
+                            'bot','Bot','model','ai-msg','aiMsg','ai-message','gen-answer','markdown'];
+          const convHints = ['messages','Messages','conversation','Conversation','chat','Chat',
+                             'thread','Thread','log','history','History','list','List','scroll'];
+          // 递归扫描：主文档 → 同源 iframe → shadowRoot（涵盖对话区常嵌套在这些里的站点）
+          function scan(doc) {
+            if (!doc) return;
+            try { doc.querySelectorAll(roleSel).forEach(add); } catch(e){}
+            for (const h of clsHints) {
+              try { doc.querySelectorAll('[class*="'+h+'"]').forEach(add); } catch(e){}
+            }
+            for (const h of convHints) {
+              const el = doc.querySelector('[class*="'+h+'"]');
+              if (el) {
+                const kids = [...el.children].filter(k => vis(k).length > 20);
+                if (kids.length) add(kids[kids.length - 1]);
+                break;
+              }
+            }
+            try {
+              doc.querySelectorAll('iframe').forEach(f => {
+                try { if (f.contentDocument) scan(f.contentDocument); } catch(e){}
+              });
+            } catch(e){}
+            try {
+              doc.querySelectorAll('*').forEach(el => {
+                try { if (el.shadowRoot) scan(el.shadowRoot); } catch(e){}
+              });
+            } catch(e){}
+          }
+          scan(document);
+          const nSent = norm(SENT).slice(0, 400);
+          // 免责声明/操作条等噪声：文本很短且命中常见模板词 → 不是真实回复
+          const isBoiler = (t) => {
+            const nt = norm(t);
+            if (!nt) return true;
+            if (nt.length > 80) return false;
+            return /(内容由AI生成|请仔细甄别|AI生成内容|生成内容仅供参考|本内容由AI|以上内容.{0,6}由AI生成|AI-generated|内容转载自)/.test(nt)
+                || /^(复制|分享|重新生成|继续生成|收藏|点赞|点踩|举报|朗读|编辑|停止|发送)$/.test(nt);
+          };
+          const good = [];
+          for (const el of A) {
+            const r = el.getBoundingClientRect();
+            if (r.width <= 0 || r.height <= 0) continue;
+            const t = vis(el);
+            if (t.length < 10) continue;
+            if (isBoiler(t)) continue;
+            const nt = norm(t);
+            let promptLike = false;
+            if (nSent.length > 20) {
+              const a = nt.length >= nSent.length ? nt : nSent;
+              const b = nt.length >= nSent.length ? nSent : nt;
+              if (a.includes(b)) promptLike = true;
+            }
+            good.push({el, t, promptLike});
+          }
+          // 优先选「对话气泡（class 含 message）」里实质内容（≥30字）的最后一条；
+          // 逐级回退：全部气泡 → 全部候选 → 整页 body（调用方对 n==0 会继续等待）
+          const msgEls = good.filter(x => {
+            const c = (x.el.className || '').toString();
+            return c.includes('message') || c.includes('Message');
+          });
+          let pick = msgEls.filter(x => !x.promptLike && x.t.length >= 30);
+          if (!pick.length) pick = msgEls.filter(x => !x.promptLike);
+          if (!pick.length) pick = good.filter(x => !x.promptLike && x.t.length >= 30);
+          if (!pick.length) pick = good.filter(x => !x.promptLike);
+          if (!pick.length) pick = good;
+          if (!pick.length) {
+            return {text: vis(document.body), n: 0, bodyLen: (document.body.innerText||'').length};
+          }
+          pick.sort((a, b) => (a.el.compareDocumentPosition(b.el) & 4) ? -1 : 1);
+          const last = pick[pick.length - 1];
+          return {text: last.t, n: pick.length, bodyLen: (document.body.innerText||'').length};
+        })()
+        """
+        code = code.replace("__SENT__", json.dumps(sent))
+        try:
+            r = self.js(code)
+            if isinstance(r, dict):
+                # 返回结构化结果：text=文本，n=命中的消息气泡数（0 表示回退到整页 body）
+                return r
+            return {"text": str(r) if r else "", "n": 0, "bodyLen": 0}
+        except Exception:
+            return {"text": "", "n": 0, "bodyLen": 0}
+
+
+def _pya_ok(r):
+    """pyautogui 结果是否表示真的投递成功（避免「无坐标/找不到窗口」被误判为成功）。"""
+    if not isinstance(r, str):
+        return False
+    bad = ("无坐标", "找不到窗口", "未配置")
+    return ("ok" in r.lower() or "已发送" in r) and not any(b in r for b in bad)
+
+
+def _type_of(ai):
+    """从配置查 AI 类型（web/electron），找不到返回空串。"""
+    for e in _load_cfg():
+        if e.get("名字") == ai:
+            return e.get("类型", "")
+    return ""
+
+
+def send_via_cdp(ai, text):
+    if ai not in CDP_APPS:
+        return None
+    port, kw = CDP_APPS[ai]
+    t = CDPTab(port, kw)
+    return t.send_text(text, ai)
+
+
+def capture(ai):
+    """抓取 AI 的回复文本（CDP，含 electron）；失败返回空串。"""
+    info = _lookup(ai)
+    if not info or not info[0]:
+        return ""
+    port, kw = info
+    try:
+        t = CDPTab(port, kw)
+        t.ai = ai
+        t._sent = _LAST_SENT.get(ai, "")
+        r = t.read_reply()
+        txt = r.get("text", "") if isinstance(r, dict) else (r or "")
+        if not txt:
+            _dump_debug(t, ai, port, kw)
+        return txt
+    except Exception as e:
+        try:
+            with open(os.path.join(PROGRAM_ROOT, "windows-use", f"capture_debug_{ai}.txt"),
+                      "w", encoding="utf-8") as f:
+                f.write(f"capture 异常: {e}\nport={port} kw={kw}\n")
+        except Exception:
+            pass
+        return ""
+
+
+def capture_with_meta(ai):
+    """同 capture，但额外返回结构化信息：{"text", "n", "bodyLen"}。
+    n 为命中的助手消息气泡数；n==0 表示只抓到整页回退文本（未真正回复），供调用方判定真伪。"""
+    info = _lookup(ai)
+    if not info or not info[0]:
+        return {"text": "", "n": 0, "bodyLen": 0}
+    port, kw = info
+    try:
+        t = CDPTab(port, kw)
+        t.ai = ai
+        t._sent = _LAST_SENT.get(ai, "")
+        r = t.read_reply()
+        if isinstance(r, dict):
+            return r
+        return {"text": str(r) if r else "", "n": 0, "bodyLen": 0}
+    except Exception:
+        return {"text": "", "n": 0, "bodyLen": 0}
+
+
+def _dump_debug(t, ai, port, kw):
+    """抓取为空时，把页面诊断信息写入调试文件，便于排查 DOM 结构。"""
+    try:
+        info = t.js("""(() => {
+          const frames = [...document.querySelectorAll('iframe')].map(f => (f.src||f.id||'')).slice(0, 12);
+          return JSON.stringify({
+            title: document.title,
+            url: location.href,
+            bodyLen: (document.body.innerText || '').length,
+            bodyTail: (document.body.innerText || '').replace(/\\s+/g,' ').slice(-500),
+            iframes: frames,
+            candidates: (() => { try {
+              const sels = '[data-role="assistant"],[role="assistant"],[class*="message"],[class*="Message"],[class*="bubble"],[class*="reply"],[class*="answer"]';
+              const els = [...document.querySelectorAll(sels)];
+              return els.slice(-5).map(e => (e.innerText||'').replace(/\\s+/g,' ').slice(0,120));
+            } catch(e){ return []; } })()
+          });
+        })()""")
+        with open(os.path.join(PROGRAM_ROOT, "windows-use", f"capture_debug_{ai}.txt"),
+                  "w", encoding="utf-8") as f:
+            f.write(f"port={port} kw={kw}\n")
+            f.write(str(info) + "\n")
+    except Exception as e:
+        try:
+            with open(os.path.join(PROGRAM_ROOT, "windows-use", f"capture_debug_{ai}.txt"),
+                      "w", encoding="utf-8") as f:
+                f.write(f"debug 异常: {e}\nport={port} kw={kw}\n")
+        except Exception:
+            pass
+
+
+def send_via_pyautogui(ai, text):
+    import pyautogui, pyperclip, pygetwindow as gw
+    pyautogui.FAILSAFE = False
+    if ai not in PYA_APPS:
+        return "未配置"
+    proc = PYA_APPS[ai]
+    import psutil, win32process
+    pids = set()
+    for p in psutil.process_iter(['name', 'pid']):
+        if (p.info['name'] or "").lower().startswith(proc.lower()):
+            pids.add(p.info['pid'])
+    win = None
+    for w in gw.getAllWindows():
+        if not w.title or w.width < 100:
+            continue
+        try:
+            _, wp = win32process.GetWindowThreadProcessId(w._hWnd)
+            if wp in pids:
+                win = w; break
+        except:
+            pass
+    if not win:
+        return "找不到窗口"
+    try:
+        if win.isMinimized:
+            win.restore()
+        win.activate()
+    except:
+        pass
+    time.sleep(1)
+    with open(COORD_FILE, encoding="utf-8") as f:
+        c = json.load(f)
+    if ai not in c or "input_rel" not in c[ai]:
+        return f"无坐标（需重录 {ai}）"
+    rel = c[ai]["input_rel"]
+    px = int(win.left + rel[0] * win.width)
+    py = int(win.top + rel[1] * win.height)
+    pyautogui.click(px, py); time.sleep(0.4)
+    pyautogui.click(px, py); time.sleep(0.6)
+    pyperclip.copy(text); time.sleep(0.5)
+    pyautogui.keyDown("ctrl"); time.sleep(0.1)
+    pyautogui.press("v"); time.sleep(0.1)
+    pyautogui.keyUp("ctrl"); time.sleep(1.2)
+    pyautogui.press("enter"); time.sleep(0.5)
+    return "pyautogui ok"
+
+
+def send(ai, text, retries=3, retry_delay=3):
+    """发送。CDP 失败会重试 retries 次（每次 retry_delay 秒）；仍失败才降级 pyautogui。"""
+    _LAST_SENT[ai] = text
+    if ai in CDP_APPS:
+        last_err = None
+        for _attempt in range(retries):
+            try:
+                r = send_via_cdp(ai, text)
+                if r in ("no-input", None):
+                    raise Exception(f"CDP 找不到可用输入框（{r}）")
+                if _attempt > 0:
+                    print(f"[CDP 重试] {ai} 第 {_attempt+1}/{retries} 次成功")
+                return f"✅ {ai}: CDP {r}"
+            except Exception as e:
+                last_err = e
+                if _attempt < retries - 1:
+                    print(f"[CDP 重试] {ai} 第 {_attempt+1}/{retries} 次失败：{e}，{retry_delay}s 后重试")
+                    time.sleep(retry_delay)
+                    continue
+                break
+        msg = f"⚠ {ai}: CDP 失败 {last_err}（已重试 {retries} 次）"
+        # 全部重试失败后，才降级 pyautogui 兜底
+        if ai in PYA_APPS:
+            try:
+                r2 = send_via_pyautogui(ai, text)
+                if _pya_ok(r2):
+                    return f"✅ {ai}: {r2}（CDP 重试失败已兜底：{last_err}）"
+                return f"{msg}；pyautogui 兜底失败：{r2}"
+            except Exception as e2:
+                return f"{msg}；pyautogui 兜底也失败：{e2}"
+        return msg
+    elif ai in PYA_APPS:
+        try:
+            r = send_via_pyautogui(ai, text)
+            return f"✅ {ai}: {r}" if _pya_ok(r) else f"❌ {ai}: {r}"
+        except Exception as e:
+            return f"❌ {ai}: pyautogui {e}"
+    else:
+        return f"❌ 未配置: {ai}"
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("用法: python mix_send.py <AI> <文字>")
+        print("CDP:", list(CDP_APPS.keys()))
+        print("PYA:", list(PYA_APPS.keys()))
+        sys.exit()
+    print(send(sys.argv[1], sys.argv[2]))

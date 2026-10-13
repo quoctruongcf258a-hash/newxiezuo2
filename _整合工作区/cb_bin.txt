@@ -1,0 +1,37 @@
+--- bin 目录 ---
+  buddycn  2018
+  buddycn.cmd  186
+--- tools 目录 ---
+  inno_updater.exe
+  vcruntime140.dll
+--- resources/app 顶层 ---
+  extensions
+  node_modules
+  out
+  resources
+  LICENSE.txt
+  node_modules.asar
+  package.json
+  product-ide-cn.json
+  product-ide.json
+  product.json
+  ThirdPartyNotices.txt
+--- package.json name/productName ---
+{
+  "name": "CodeBuddy CN",
+  "private": true,
+  "version": "1.106.1",
+  "distro": "0e93c4a2ae00183c1a3c61a81a820ebea824de39",
+  "author": {
+    "name": "Tencent"
+  },
+  "license": "MIT",
+  "main": "./out/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node ./scripts/dev-monorepo.mjs --raw",
+    "dev:dashboard": "node ./scripts/dev-monorepo.mjs",
+    "dev:install": "node ./scripts/dev-monorepo.mjs --install-only",
+    "dev:cdp": "node ./scripts/dev-monorepo.mjs --cdp",
+    "dev:doctor": "node ./scripts/dev-monorepo.mjs --doctor",
+    "test": "echo Please run any of the test scripts fr

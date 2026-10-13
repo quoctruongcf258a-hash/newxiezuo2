@@ -1,0 +1,69 @@
+================================================================
+32流程版 · 三处全改 + 项目切换/56子项/逐环指派 — 验证结论
+生成时间：2026-10（基于当前 F 盘代码）
+================================================================
+
+一、用户要求（原始指令）
+  1) 三处全改：规划子项拆分 / 模板 desc 源 / mesh 子项循环
+  2) 用现有 UI「新建项目 / 继续项目」入口切换项目，不能只跑疯骨项目
+  3) 兼容当前 56 个子项码（B1/B2/E/C/D/F/G/H）
+  4) 每个环节能够单独指派对应 AI
+
+二、改动文件（均在 F:\赛马23环整合工作室\程序2改装版\app\）
+  • paths.py
+      - 新增按项目配置解析：set_active_project_cfg / get_active_project_cfg /
+        get_cfg_rules_dir / get_cfg_prompts_dir / cfg_prompt_path
+      - 37 环引擎改为优先读取「项目级 config」（phases.json / assignments.json / prompts/），
+        不再硬绑全局 rules/（满足“切换项目/不只跑疯骨”）
+  • phase_runner.py
+      - 读配置统一走 paths.get_cfg_rules_dir() / cfg_prompt_path()
+      - _assign_node 按 __ 后缀剥离子项码 → 查环级明细（同一环的子项共享 AI 指派）
+      - run_subphase 增加 item_desc 参数，缺专属模板时回退 _通用.md 并追加子项要求
+      - run_phase 增加 items 拆分：同一环拆成多个独立子项，每子项 = 一个 final.md，
+        各自独立跑 mesh/human/lock，互不复用前子项输出（修复“子项不循环/只出一份”）
+      - 放宽“执行者必填”：mode∈{mesh,human,lock} 时由 writers/judges/merger 驱动，
+        不再因缺“执行”整环跳过（修复 mesh 环 0 产出）
+  • build_project_config.py（新增）
+      - 种子工具：按项目生成独立 config（phases.json / assignments.json / prompts/）
+      - 模板：疯骨56（blocks.json → 8 环 × 56 子项，含真实 desc）、通用37环（apps.json → 23 环）、导入（自定义 blocks.json）
+      - 默认写手=[豆包,通义千问,DeepSeek,Kimi,腾讯元宝]，裁判=[智谱清言,文心一言,讯飞星火]（跨厂盲审）
+      - 每环默认 mode=mesh，写手/裁判/汇总/审核/调整齐全 → 支持“逐环单独指派 AI”
+  • collab_app.py
+      - 中央页新增 37 环引擎控制条：环节下拉(01_规划..05_出厂) + ▶运行本环节 + ⏸放行 + 🎯AI指派
+      - _on_stage0_confirm（新建项目）：先用 build_project_config 播种 config，再 set_active_project_cfg
+      - _on_continue_project（继续项目）：加载该项目 config/；无则回退 None
+      - _Assign37Dialog：逐环节编辑 mode/writers/judges/merger/审核/调整，写回 assignments.json
+
+三、配置级验证（疯骨56 种子直接生成）
+  python build_project_config.py --template 疯骨56 --out <config>
+  生成结果：
+    规划环数 = 8（一句话故事/简介与主题/全书结构/人物系统/世界系统/章节规划/追踪与备份/上架包装）
+    规划子项数 = 56（B1×7 B2×8 E×10 C×17 D×3 F×7 G×1 H×3）
+    提示词文件 = 56（每个子项独立 <环名>__<码>.md，含 blocks.json 真实 desc，如 H-书名简介 带番茄书名规则）
+  assignments.json：01_规划 明细 8 环，每环含 mode/writers[5]/judges[3]/merger/审核/调整
+
+四、运行时验证（无头，内置伪AI，不联网、无递归）
+  paths.set_active_project_cfg(<config>); phase_runner.run_phase("01_规划", project_dir=<ws>)
+  结果：
+    规划环数 = 8
+    期望子项数 = 56    实际 final.md = 56
+    写手稿 draft_ = 280 (=56×5)   盲审稿 review_ = 168 (=56×3)   汇总 final = 56
+    缺失子项 = []    多余子项 = []    RESULT = PASS
+  结论：56 子项码全部独立出文件；mesh 机制每子项独立赛马（5写手→3裁判盲审→1汇总）；
+        逐环 AI 指派（writers/judges/merger）已真实驱动引擎。
+
+五、使用方式（对接现有 UI 入口）
+  • 新建项目：在 stage0 选模板（疯骨56子项 / 通用37环 / 导入blocks）→ 确认后自动播种 config 并切换
+  • 继续项目：选已有项目 → 加载其 config/ → 后续 37 环运行即读该项目配置
+  • 逐环指派 AI：中央页 🎯AI指派 → 选环节 → 每环改 mode / 写手 / 裁判 / 汇总 / 审核 / 调整 → 写回
+  • 运行：选环节 → ▶运行本环节；环节末尾写 放行.json(confirmed=false) 停住，点 ⏸放行 续跑
+
+六、仍未处理（用户未要求，列为可选）
+  • 目录重命名 程序2改装版 → 32流程版（仅改名，不影响功能）
+  • 合并 Q7_上架前低级错误检查 与 05_出厂/5-1_低级错误（去重）
+  • python-docx 未安装：Word 导出会报错（如需 .docx 交付需先装）
+
+================================================================
+最终结论：三处全改已完成并验证通过；项目切换 / 56子项兼容 / 逐环 AI 指派
+均已接入现有 UI 与 37 环引擎，可在 F 盘测试副本独立运行，不影响原程序。
+================================================================

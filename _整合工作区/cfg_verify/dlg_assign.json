@@ -1,0 +1,38 @@
+{
+  "环节": {
+    "01_规划": {
+      "明细": {
+        "P01_规划前约束": {
+          "mode": "human",
+          "writers": [
+            "豆包",
+            "ima"
+          ],
+          "judges": [
+            "WorkBuddy",
+            "QUEST",
+            "智谱WEB"
+          ],
+          "merger": "ima",
+          "审核": "",
+          "调整": ""
+        },
+        "P02_类型平台读者卖点": {
+          "mode": "mesh",
+          "writers": [
+            "WorkBuddy",
+            "豆包"
+          ],
+          "judges": [
+            "WorkBuddy",
+            "豆包",
+            "QUEST"
+          ],
+          "merger": "",
+          "审核": "",
+          "调整": ""
+        }
+      }
+    }
+  }
+}

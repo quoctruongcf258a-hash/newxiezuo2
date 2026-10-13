@@ -1,0 +1,7 @@
+--- 现有 Singleton 锁文件 ---
+  C:\Users\Administrator\AppData\Roaming\CodeBuddy CN : (无 Singleton 锁)
+  C:\Users\Administrator\.workbuddy\app : (无 Singleton 锁)
+  C:\Users\Administrator\AppData\Roaming\WorkBuddy : (无 Singleton 锁)
+独立 user-data-dir 启动: PID=37672 alive=False
+  NO PROCESS
+  9223 监听: False

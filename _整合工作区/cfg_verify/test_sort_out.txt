@@ -1,0 +1,11 @@
+排序结果: ['WorkBuddy', 'CodeBuddy超长名字测试', '小张同学', 'Doubao', '未启动甲', 'QUEST', '未启动乙', 'gemini']
+绿灯名单: ['WorkBuddy', 'CodeBuddy超长名字测试', '小张同学']
+下拉内容: ['WorkBuddy', 'CodeBuddy超长名字测试', '小张同学']
+无绿灯时 count=0 enabled=False
+对话框绿灯顺序: ['WorkBuddy', 'CodeBuddy超长名字测试', '小张同学']
+按钮清单: ['WorkBuddy', 'CodeBuddy超长名字测试', '小张同学']
+  WorkBuddy              按钮宽=111 需要≈111 OK
+  CodeBuddy超长名字测试        按钮宽=201 需要≈201 OK
+  小张同学                   按钮宽=90 需要≈90 OK
+
+=== ALL PASS ===

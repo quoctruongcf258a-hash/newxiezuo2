@@ -1,0 +1,83 @@
+{
+  "generated": "2026-10-11T00:47:55",
+  "note": "SIM 模拟试运行，未发起真实 AI 窗口调用。real 模式需 5 个 AI 桌面窗口 + CDP。",
+  "writers": [
+    "豆包",
+    "千问",
+    "ZCode",
+    "WorkBuddy",
+    "Qoder"
+  ],
+  "mesh_demo": {
+    "ring": "主角设计",
+    "mode": "mesh",
+    "chunks": {
+      "豆包": "<<主角设计·豆包·草稿(模拟)>>",
+      "千问": "<<主角设计·千问·草稿(模拟)>>",
+      "ZCode": "<<主角设计·ZCode·草稿(模拟)>>",
+      "WorkBuddy": "<<主角设计·WorkBuddy·草稿(模拟)>>",
+      "Qoder": "<<主角设计·Qoder·草稿(模拟)>>"
+    },
+    "blind_matrix": {
+      "豆包": {
+        "千问": 9,
+        "ZCode": 7,
+        "WorkBuddy": 8,
+        "Qoder": 8
+      },
+      "千问": {
+        "豆包": 10,
+        "ZCode": 10,
+        "WorkBuddy": 7,
+        "Qoder": 8
+      },
+      "ZCode": {
+        "豆包": 9,
+        "千问": 10,
+        "WorkBuddy": 7,
+        "Qoder": 10
+      },
+      "WorkBuddy": {
+        "豆包": 8,
+        "千问": 10,
+        "ZCode": 7,
+        "Qoder": 10
+      },
+      "Qoder": {
+        "豆包": 10,
+        "千问": 8,
+        "ZCode": 7,
+        "WorkBuddy": 10
+      }
+    },
+    "averages": {
+      "豆包": 9.25,
+      "千问": 9.25,
+      "ZCode": 7.75,
+      "WorkBuddy": 8.0,
+      "Qoder": 9.0
+    },
+    "champion": "豆包",
+    "auditDirections": [
+      "人物系统"
+    ]
+  },
+  "human_demo": {
+    "ring": "规划前约束",
+    "mode": "human",
+    "exec": "AI候选",
+    "review": "人拍板",
+    "auditDirections": [
+      "定位与约束"
+    ]
+  },
+  "lock_demo": {
+    "ring": "规划验收",
+    "mode": "lock",
+    "exec": "AI审计",
+    "review": "AI审计+人锁",
+    "auditDirections": [
+      "规划验收"
+    ]
+  }
+}

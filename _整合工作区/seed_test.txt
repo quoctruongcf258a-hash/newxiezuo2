@@ -1,0 +1,21 @@
+== 疯骨56 ==
+{"out_dir": "F:\\赛马23环整合工作室\\_整合工作区\\测试_疯骨56\\config", "template": "疯骨56子项", "规划环数": 8, "规划子项数": 56, "prompts数": 56}
+== 通用37环 ==
+{"out_dir": "F:\\赛马23环整合工作室\\_整合工作区\\测试_通用\\config", "template": "通用37环", "规划环数": 23, "规划子项数": 0, "prompts数": 23}
+== 疯骨56 01_规划 环名 ==
+   一句话故事 mode=mesh items=7
+   简介与主题 mode=mesh items=8
+   全书结构 mode=mesh items=10
+   人物系统 mode=mesh items=17
+   世界系统 mode=mesh items=3
+   章节规划 mode=mesh items=7
+   追踪与备份 mode=mesh items=1
+   上架包装 mode=mesh items=3
+== 通用 01_规划 前3环 ==
+   规划前约束 mode=human desc_len=34
+   类型平台读者卖点 mode=human desc_len=33
+   文风与叙事基调 mode=human desc_len=57
+== 疯骨 一句话故事__B1-1.md 头3行 ==
+   # 一句话故事 · 主角（01_规划） |  | ## 一、任务要求
+== 通用 一句话故事.md 是否含 desc ==
+   contains 合成句: True

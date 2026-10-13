@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "F:\赛马23环整合工作室\程序2改装版\app\collab_app.py", line 2011, in _open_assign_dialog
+    if dlg.exec() == _QDialog.Accepted:
+                     ^^^^^^^^
+NameError: name '_QDialog' is not defined. Did you mean: 'QDialog'?

@@ -1,0 +1,8 @@
+# Windows-Use 自动化层依赖
+# 安装：在 windows-use/ 目录下 python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt
+windows-use
+python-dotenv
+# windows-use 0.8.1 的 provider 代码用旧式 `from mistralai import Mistral`，
+# 而 mistralai>=2.0 改成了 `from mistralai.client import Mistral`。
+# 不钉住会被 pip 拉到 3.x 导致 import 失败（且 windows-use 启动强制 import 全部 provider）。
+mistralai<2

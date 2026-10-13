@@ -1,0 +1,65 @@
+{
+  "CodeBuddy": {
+    "title": "20261005011132 - CodeBuddy CN [管理员]",
+    "x": 0,
+    "y": 0,
+    "width": 650,
+    "height": 570
+  },
+  "QUEST": {
+    "title": "Quest Window",
+    "x": 1029,
+    "y": 10,
+    "width": 487,
+    "height": 577
+  },
+  "TraeWork": {
+    "title": "TraeWork CN [管理员]",
+    "x": 795,
+    "y": 0,
+    "width": 728,
+    "height": 600
+  },
+  "Qianwen": {
+    "title": "千问",
+    "x": -12,
+    "y": 568,
+    "width": 671,
+    "height": 508
+  },
+  "WorkBuddy": {
+    "title": "WorkBuddy",
+    "x": 653,
+    "y": 1,
+    "width": 867,
+    "height": 600
+  },
+  "ZCode": {
+    "title": "ZCode",
+    "x": 648,
+    "y": 0,
+    "width": 874,
+    "height": 640
+  },
+  "Doubao": {
+    "title": "七人赛马规划评审（Qianwen） - 豆包",
+    "x": 640,
+    "y": 581,
+    "width": 890,
+    "height": 483
+  },
+  "DeepSeek": {
+    "title": "继续审核流程 - DeepSeek 和另外 1 个页面 - 个人 - Microsoft​ Edge",
+    "x": 997,
+    "y": 6,
+    "width": 516,
+    "height": 551
+  },
+  "__UI__": {
+    "title": "赛马全自动控制台 v0.8",
+    "x": 631,
+    "y": 31,
+    "width": 1018,
+    "height": 1016
+  }
+}

@@ -1,0 +1,16 @@
+--- 当前进程 ELECTRON_ 环境变量 ---
+  ELECTRON_RUN_AS_NODE=1
+  NODE_OPTIONS=
+  VSCODE_CODE_CACHE_PATH=C:\Users\Administrator\AppData\Roaming\CodeBuddy CN\CachedData\757a5b2fd56bc7e1fcabb38b58d2ac1694f78f6d
+  VSCODE_CRASH_REPORTER_PROCESS_TYPE=extensionHost
+  VSCODE_CWD=C:\Users\Administrator\AppData\Local\Programs\CodeBuddy CN
+  VSCODE_ESM_ENTRYPOINT=vs/workbench/api/node/extensionHostProcess
+  VSCODE_HANDLES_UNCAUGHT_ERRORS=true
+  VSCODE_IPC_HOOK=\\.\pipe\8eaa8fc1-1.106.1-main-sock
+  VSCODE_NLS_CONFIG={"userLocale":"zh-cn","osLocale":"zh-cn","resolvedLanguage":"zh-cn","defaultMessagesFile":"C:\\Users\\Administrator\\AppData\\Local\\Programs\\CodeBuddy CN\\resources\\app\\out\\nls.messages.json","languagePack":{"translationsConfigFile":"C:\\Users\\Administrator\\AppData\\Roaming\\CodeBuddy CN\\clp\\3efb5196290944c3f1ed073ef4db07a5.zh-cn\\tcf.json","messagesFile":"C:\\Users\\Administrator\\AppData\\Roaming\\CodeBuddy CN\\clp\\3efb5196290944c3f1ed073ef4db07a5.zh-cn\\757a5b2fd56bc7e1fcabb38b58d2ac1694f78f6d\\nls.messages.json","corruptMarkerFile":"C:\\Users\\Administrator\\AppData\\Roaming\\CodeBuddy CN\\clp\\3efb5196290944c3f1ed073ef4db07a5.zh-cn\\corrupted.info"},"locale":"zh-cn","availableLanguages":{"*":"zh-cn"},"_languagePackId":"3efb5196290944c3f1ed073ef4db07a5.zh-cn","_languagePackSupport":true,"_translationsConfigFile":"C:\\Users\\Administrator\\AppData\\Roaming\\CodeBuddy CN\\clp\\3efb5196290944c3f1ed073ef4db07a5.zh-cn\\tcf.json","_cacheRoot":"C:\\Users\\Administrator\\AppData\\Roaming\\CodeBuddy CN\\clp\\3efb5196290944c3f1ed073ef4db07a5.zh-cn","_resolvedLanguagePackCoreLocation":"C:\\Users\\Administrator\\AppData\\Roaming\\CodeBuddy CN\\clp\\3efb5196290944c3f1ed073ef4db07a5.zh-cn\\757a5b2fd56bc7e1fcabb38b58d2ac1694f78f6d","_corruptedFile":"C:\\Users\\Administrator\\AppData\\Roaming\\CodeBuddy CN\\clp\\3efb5196290944c3f1ed073ef4db07a5.zh-cn\\corrupted.info"}
+  VSCODE_PID=16652
+--- 用户/系统级环境变量 ---
+  User ELECTRON_RUN_AS_NODE=(未设置)
+  Machine ELECTRON_RUN_AS_NODE=(未设置)
+--- 测试：清空后带 --user-data-dir 启动 ---
+  带 --user-data-dir 直接执行 => 

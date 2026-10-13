@@ -1,0 +1,41 @@
+组 B1: 类型 dict
+   子项数: 3
+     stage -> 规划
+     phase -> 一句话故事
+     blocks -> name=None desc=""
+组 B2: 类型 dict
+   子项数: 3
+     stage -> 规划
+     phase -> 简介与主题
+     blocks -> name=None desc=""
+组 E: 类型 dict
+   子项数: 3
+     stage -> 规划
+     phase -> 全书结构
+     blocks -> name=None desc=""
+组 C: 类型 dict
+   子项数: 3
+     stage -> 规划
+     phase -> 人物系统
+     blocks -> name=None desc=""
+组 D: 类型 dict
+   子项数: 3
+     stage -> 规划
+     phase -> 世界系统
+     blocks -> name=None desc=""
+组 F: 类型 dict
+   子项数: 3
+     stage -> 规划
+     phase -> 章节规划
+     blocks -> name=None desc=""
+组 G: 类型 dict
+   子项数: 3
+     stage -> 规划
+     phase -> 追踪与备份
+     blocks -> name=None desc=""
+组 H: 类型 dict
+   子项数: 3
+     stage -> 规划
+     phase -> 上架包装
+     blocks -> name=None desc=""
+总子项估计: 24

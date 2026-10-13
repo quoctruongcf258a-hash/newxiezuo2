@@ -1,0 +1,10 @@
+=== 当前环境（启动前）===
+  污染变量数: 9 → ['ELECTRON_RUN_AS_NODE', 'VSCODE_CODE_CACHE_PATH', 'VSCODE_CRASH_REPORTER_PROCESS_TYPE', 'VSCODE_CWD', 'VSCODE_ESM_ENTRYPOINT', 'VSCODE_HANDLES_UNCAUGHT_ERRORS']
+=== _clean_env 后 ===
+  残留: 无
+  Path 是否保留: False
+
+=== 用 players.launch 启动 ===
+  结果: OK（CDP 9223）
+  ✅ 端口 9223 已监听（等待 3.0s）
+  CDP /json/version: Chrome/138.0.7204.251 | ws://127.0.0.1:9223/devtools/browser/e9c5bed3-4983-43a6-bdc7
